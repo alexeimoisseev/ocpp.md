@@ -29,27 +29,27 @@ OUTPUT_DIR = ROOT / "public"
 
 # Markdown files to convert: (source_path, clean_url_path)
 # Each page outputs to public/<url_path>/index.html
-INDEX_SOURCE = "OCPP-2.0.1.md"
+INDEX_SOURCE = "docs/OCPP-2.0.1.md"
 
 CONTENT_FILES = [
-    ("OCPP-2.0.1.md", "ocpp-2.0.1"),
-    ("OCPP-2.0.1-DataTypes.md", "ocpp-2.0.1/data-types"),
-    ("METHODOLOGY.md", "methodology"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Authorization.md", "ocpp-2.0.1/schemas/authorization"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Availability.md", "ocpp-2.0.1/schemas/availability"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md", "ocpp-2.0.1/schemas/diagnostics"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Display.md", "ocpp-2.0.1/schemas/display"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Firmware.md", "ocpp-2.0.1/schemas/firmware"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md", "ocpp-2.0.1/schemas/provisioning"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Reservation.md", "ocpp-2.0.1/schemas/reservation"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md", "ocpp-2.0.1/schemas/security"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md", "ocpp-2.0.1/schemas/smart-charging"),
-    ("OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Transactions.md", "ocpp-2.0.1/schemas/transactions"),
-    ("OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences.md", "ocpp-2.0.1/sequences"),
-    ("OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences-Operational.md", "ocpp-2.0.1/sequences/operational"),
-    ("OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging.md", "ocpp-2.0.1/smart-charging"),
-    ("OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-Examples.md", "ocpp-2.0.1/smart-charging/examples"),
-    ("OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-ISO15118.md", "ocpp-2.0.1/smart-charging/iso15118"),
+    ("docs/OCPP-2.0.1.md", "ocpp-2.0.1"),
+    ("docs/OCPP-2.0.1-DataTypes.md", "ocpp-2.0.1/data-types"),
+    ("docs/METHODOLOGY.md", "methodology"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Authorization.md", "ocpp-2.0.1/schemas/authorization"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Availability.md", "ocpp-2.0.1/schemas/availability"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md", "ocpp-2.0.1/schemas/diagnostics"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Display.md", "ocpp-2.0.1/schemas/display"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Firmware.md", "ocpp-2.0.1/schemas/firmware"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md", "ocpp-2.0.1/schemas/provisioning"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Reservation.md", "ocpp-2.0.1/schemas/reservation"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md", "ocpp-2.0.1/schemas/security"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md", "ocpp-2.0.1/schemas/smart-charging"),
+    ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Transactions.md", "ocpp-2.0.1/schemas/transactions"),
+    ("docs/OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences.md", "ocpp-2.0.1/sequences"),
+    ("docs/OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences-Operational.md", "ocpp-2.0.1/sequences/operational"),
+    ("docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging.md", "ocpp-2.0.1/smart-charging"),
+    ("docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-Examples.md", "ocpp-2.0.1/smart-charging/examples"),
+    ("docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-ISO15118.md", "ocpp-2.0.1/smart-charging/iso15118"),
 ]
 
 # Mapping: normalized .md source path -> clean URL path (for link rewriting)

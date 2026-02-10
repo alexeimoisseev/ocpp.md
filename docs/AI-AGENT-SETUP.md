@@ -1,6 +1,6 @@
 # Using OCPP.md with AI Coding Agents
 
-This repository is available as a **Claude Code plugin** that gives your AI assistant structured OCPP 2.0.1 knowledge during development sessions.
+This repository gives your AI coding assistant structured OCPP 2.0.1 knowledge during development sessions. It works as a **Claude Code plugin** or as a standalone reference for any AI agent that can read local files.
 
 ---
 
@@ -23,19 +23,24 @@ The plugin activates automatically when the agent detects OCPP-related code or c
 /ocpp authorize          # Authorization flow
 ```
 
-### Manual Setup
+### Other AI Coding Agents
 
-If you prefer not to use the plugin system:
+The documentation in this repository works with any AI coding agent that can read local files — Cursor, Windsurf, Copilot, Aider, or a plain LLM chat with file access.
 
 1. Clone this repository:
    ```
    git clone https://github.com/alexeimoisseev/ocpp.md.git
    ```
 
-2. Add the OCPP docs path to your project's `CLAUDE.md`:
-   ```
-   For OCPP protocol reference, read files from: /path/to/ocpp.md/docs/
-   ```
+2. Point your agent at the `docs/` directory. How you do this depends on the tool:
+   - **Claude Code** (without plugin): Add to your project's `CLAUDE.md`:
+     ```
+     For OCPP protocol reference, read files from: /path/to/ocpp.md/docs/
+     ```
+   - **Cursor / Windsurf**: Add the `docs/` directory to your project's context or rules file
+   - **Other agents**: Include the path in your system prompt or project instructions
+
+The key files are `docs/OCPP-2.0.1.md` (overview + all messages) and the subdirectories under `docs/` for schemas, sequences, and smart charging detail.
 
 ---
 

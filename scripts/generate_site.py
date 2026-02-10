@@ -73,6 +73,7 @@ INDEX_TOC = [
     ("config", "Configuration"),
     ("migration", "1.6 \u2192 2.0.1"),
     ("patterns", "Patterns"),
+    ("ai-agents", "AI Agents"),
     ("glossary", "Glossary"),
 ]
 
@@ -93,7 +94,8 @@ INDEX_HEADING_IDS = {
     "10. Testing & Compliance": "testing",
     "10. Testing &amp; Compliance": "testing",
     "11. Useful Resources": "resources",
-    "12. Glossary": "glossary",
+    "12. Using with AI Coding Agents": "ai-agents",
+    "13. Glossary": "glossary",
 }
 
 # Subsection ID overrides for the index page

@@ -34,7 +34,7 @@ This reference is part of a larger documentation set:
 - **[Message Sequences](./OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences.md)** — Boot sequence, authorization flows, transaction lifecycle. Includes [Operational Sequences](./OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences-Operational.md) (reservation, offline behavior, firmware, diagnostics).
 - **[Data Types Reference](./OCPP-2.0.1-DataTypes.md)** — All reusable composite types and enumerations, plus [field-level schemas](#detailed-schema-reference) for all 64 messages.
 - **[Methodology](./METHODOLOGY.md)** — How these documents were produced, provenance tiers, and trust model.
-- **[AI Agent Setup](./AI-AGENT-SETUP.md)** — How to install and configure this reference as a Claude Code plugin for AI-assisted development.
+- **[AI Agent Setup](./AI-AGENT-SETUP.md)** — Full configuration guide for using this reference as a Claude Code plugin.
 
 ---
 
@@ -482,7 +482,46 @@ Complete field-level documentation for all 64 messages (request + response) is a
 
 ---
 
-## 12. Glossary
+## 12. Using with AI Coding Agents
+
+This reference is available as a **Claude Code plugin**. Install it once and your AI assistant gets structured OCPP 2.0.1 knowledge in every project.
+
+### Quick Setup
+
+```
+claude plugin add alexeimoisseev/ocpp.md
+```
+
+Once installed, the plugin activates automatically when working with OCPP code. You can also invoke it directly:
+
+```
+/ocpp                    # General OCPP assistance
+/ocpp smart-charging     # Smart charging deep-dive
+/ocpp transactions       # Transaction handling
+/ocpp authorize          # Authorization flow
+```
+
+### What the Agent Gets
+
+The plugin provides a hybrid reference: a compact inline summary (all 64 messages, key types, escalation model) is always available, while detailed schemas, sequence diagrams, and worked examples are loaded on demand when needed.
+
+### Escalation Handling
+
+The OCPP spec has areas that are silent, vendor-dependent, or policy-dependent. The plugin prevents the agent from silently guessing in these areas. Configure the behavior in your project's `CLAUDE.md`:
+
+```
+ocpp:
+  escalation: strict
+```
+
+- **strict** (default) — agent stops and asks before making assumptions
+- **pragmatic** — agent flags ambiguity with a code comment but picks a reasonable default
+
+See the full [AI Agent Setup guide](./AI-AGENT-SETUP.md) for manual installation and detailed configuration.
+
+---
+
+## 13. Glossary
 
 | Term | Definition |
 |------|-----------|

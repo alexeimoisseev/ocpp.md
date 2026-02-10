@@ -37,10 +37,12 @@ schema references, implementation guidance, and to flag areas where the spec is 
 - `SetVariables` (CSMS→CS) — Write configuration
 - `GetBaseReport` (CSMS→CS) — Request full variable inventory
 - `NotifyReport` (CS→CSMS) — Variable inventory response (paginated)
+- `SetNetworkProfile` (CSMS→CS) — Configure network connection profiles
 - `Reset` (CSMS→CS) — Reboot station
 
 ### Authorization
 - `Authorize` (CS→CSMS) — Validate ID token
+- `ClearCache` (CSMS→CS) — Clear authorization cache
 - `SendLocalList` (CSMS→CS) — Push local auth list
 - `GetLocalListVersion` (CSMS→CS) — Query local auth list version
 
@@ -48,6 +50,8 @@ schema references, implementation guidance, and to flag areas where the spec is 
 - `TransactionEvent` (CS→CSMS) — Started/Updated/Ended events
 - `RequestStartTransaction` (CSMS→CS) — Remote start
 - `RequestStopTransaction` (CSMS→CS) — Remote stop
+- `GetTransactionStatus` (CSMS→CS) — Query outstanding transaction messages
+- `MeterValues` (CS→CSMS) — Send meter values outside transaction context
 
 ### Remote Control
 - `TriggerMessage` (CSMS→CS) — Request CS to send a specific message
@@ -63,6 +67,7 @@ schema references, implementation guidance, and to flag areas where the spec is 
 - `ReportChargingProfiles` (CS→CSMS) — Profile query response
 - `GetCompositeSchedule` (CSMS→CS) — Calculate effective schedule
 - `NotifyEVChargingSchedule` (CS→CSMS) — EV-proposed schedule (ISO 15118)
+- `NotifyEVChargingNeeds` (CS→CSMS) — Report EV charging needs (ISO 15118)
 
 ### Firmware
 - `UpdateFirmware` (CSMS→CS) — Trigger firmware update
@@ -71,7 +76,7 @@ schema references, implementation guidance, and to flag areas where the spec is 
 - `PublishFirmwareStatusNotification` (CS→CSMS) — Publish progress
 - `UnpublishFirmware` (CSMS→CS) — Remove published firmware
 
-### Certificates (ISO 15118)
+### Security & Certificates
 - `Get15118EVCertificate` (CS→CSMS) — EV certificate request
 - `GetCertificateStatus` (CS→CSMS) — OCSP status check
 - `SignCertificate` (CS→CSMS) — CSR for station certificate
@@ -79,6 +84,7 @@ schema references, implementation guidance, and to flag areas where the spec is 
 - `InstallCertificate` (CSMS→CS) — Install CA certificate
 - `DeleteCertificate` (CSMS→CS) — Remove certificate
 - `GetInstalledCertificateIds` (CSMS→CS) — List installed certs
+- `SecurityEventNotification` (CS→CSMS) — Report security-related event
 
 ### Diagnostics & Monitoring
 - `GetLog` (CSMS→CS) — Request log upload

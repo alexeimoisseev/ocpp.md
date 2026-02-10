@@ -135,6 +135,18 @@ These guardrails are intentional and critical to correctness.
 
 ---
 
+## Using with AI Coding Agents
+
+This repository is available as a **Claude Code plugin**:
+
+```
+claude plugin add alexeimoisseev/ocpp.md
+```
+
+See the [AI Agent Setup guide](https://ocpp.md/ai-agent-setup/) for configuration options and usage details.
+
+---
+
 ## License
 
 This repository is licensed under the **Apache License, Version 2.0**.

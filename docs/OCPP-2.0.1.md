@@ -34,6 +34,7 @@ This reference is part of a larger documentation set:
 - **[Message Sequences](./OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences.md)** — Boot sequence, authorization flows, transaction lifecycle. Includes [Operational Sequences](./OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences-Operational.md) (reservation, offline behavior, firmware, diagnostics).
 - **[Data Types Reference](./OCPP-2.0.1-DataTypes.md)** — All reusable composite types and enumerations, plus [field-level schemas](#detailed-schema-reference) for all 64 messages.
 - **[Methodology](./METHODOLOGY.md)** — How these documents were produced, provenance tiers, and trust model.
+- **[AI Agent Setup](./AI-AGENT-SETUP.md)** — How to install and configure this reference as a Claude Code plugin for AI-assisted development.
 
 ---
 

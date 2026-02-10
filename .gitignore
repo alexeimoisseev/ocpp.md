@@ -2,3 +2,4 @@ public/
 __pycache__/
 OCPP-2.0.1_JSON_schemas/
 .worktrees/
+docs/plans/

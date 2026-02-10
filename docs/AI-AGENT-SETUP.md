@@ -11,7 +11,8 @@ This repository gives your AI coding assistant structured OCPP 2.0.1 knowledge d
 Add the plugin from GitHub:
 
 ```
-claude plugin add alexeimoisseev/ocpp.md
+/plugin marketplace add https://github.com/alexeimoisseev/ocpp.md
+/plugin install ocpp-md@ocpp-md
 ```
 
 The plugin activates automatically when the agent detects OCPP-related code or conversations. You can also invoke it explicitly:

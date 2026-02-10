@@ -489,7 +489,8 @@ This reference is available as a **Claude Code plugin**. Install it once and you
 ### Quick Setup
 
 ```
-claude plugin add alexeimoisseev/ocpp.md
+/plugin marketplace add https://github.com/alexeimoisseev/ocpp.md
+/plugin install ocpp-md@ocpp-md
 ```
 
 Once installed, the plugin activates automatically when working with OCPP code. You can also invoke it directly:

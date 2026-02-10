@@ -12,7 +12,7 @@ Add the plugin from GitHub:
 
 ```
 /plugin marketplace add https://github.com/alexeimoisseev/ocpp.md
-/plugin install ocpp-md@ocpp-md
+/plugin install ocpp@ocpp
 ```
 
 The plugin activates automatically when the agent detects OCPP-related code or conversations. You can also invoke it explicitly:

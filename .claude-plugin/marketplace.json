@@ -1,12 +1,12 @@
 {
-  "name": "ocpp-md",
+  "name": "ocpp",
   "owner": {
     "name": "Alexei Moisseev",
     "email": "alexmoiss@gmail.com"
   },
   "plugins": [
     {
-      "name": "ocpp-md",
+      "name": "ocpp",
       "source": {
         "source": "github",
         "repo": "alexeimoisseev/ocpp.md"

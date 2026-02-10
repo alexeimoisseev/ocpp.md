@@ -141,7 +141,7 @@ This repository is available as a **Claude Code plugin**:
 
 ```
 /plugin marketplace add https://github.com/alexeimoisseev/ocpp.md
-/plugin install ocpp-md@ocpp-md
+/plugin install ocpp@ocpp
 ```
 
 See the [AI Agent Setup guide](https://ocpp.md/ai-agent-setup/) for configuration options and usage details.

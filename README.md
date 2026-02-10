@@ -1,204 +1,111 @@
-# OCPP 2.0.1 — AI-Friendly Implementation Reference
+# OCPP.md
 
-This repository contains **non-normative, developer-oriented documentation** for **OCPP 2.0.1**, designed primarily to help **AI coding agents and developers** implement, debug, and reason about OCPP behavior correctly.
+**Structured OCPP 2.0.1 knowledge base for AI-assisted development.**
 
-The focus is on:
-- Clear structural references derived from official OCA JSON schemas
-- Practical implementation guidance where the specification is complex
-- Explicit identification of **spec-silent and implementation-dependent areas**
-- Guardrails to prevent incorrect assumptions by automated coding tools
+OCPP 2.0.1 is 400+ pages of spec with deliberate gaps — areas where behavior depends on your hardware, your business rules, or your grid operator. AI agents need more than training data to handle this correctly.
 
-This repository is **not** a replacement for the official OCPP specification.
+This repository gives them **64 message schemas, 34 data types, sequence diagrams, smart charging deep-dives, and explicit markers for every place the spec leaves decisions to you**.
 
 ---
 
-## Scope & Goals
+## Quick Start
 
-**What this repository is:**
-- A structured, AI-friendly reference for OCPP 2.0.1
-- A bridge between formal schemas and real-world implementations
-- An explicit guide to where developer decisions are required
-- Suitable for humans *and* autonomous coding agents
-
-**What this repository is not:**
-- Not an official OCPP specification
-- Not normative or authoritative
-- Not affiliated with the Open Charge Alliance (OCA)
-- Not a complete legal or compliance reference
-
-For authoritative definitions, always refer to the official OCPP 2.0.1 documents published by the Open Charge Alliance.
-
----
-
-## Repository Structure
-
-### 1. Data Types Reference
-
-#### `OCPP-2.0.1-DataTypes.md`
-
-Complete reference of all reusable OCPP 2.0.1 data types, including:
-- 16 enums
-- 18 composite types
-
-Examples:
-- `IdTokenType`
-- `ChargingProfileType`
-- `MeterValueType`
-- `StatusInfoType`
-- `EVSEType`
-
-This document is **generated from official OCA JSON schemas** and reorganized into a human- and AI-readable format.
-
----
-
-### 2. Message Schemas (Field-Level)
-
-#### `OCPP-2.0.1-Schemas/`
-
-Field-level schemas for **all 64 OCPP 2.0.1 messages**, split by functional block:
-
-- Provisioning  
-- Authorization  
-- Transactions  
-- Smart Charging  
-- Firmware  
-- Security  
-- Diagnostics  
-- Availability  
-- Reservation  
-- Display  
-
-Each message documents:
-- All fields
-- Types
-- Required vs optional status
-- Constraints
-
-These files are **generated from official OCA JSON schemas** and are intended as a **developer convenience reference**.
-
----
-
-### 3. Smart Charging Deep-Dive
-
-#### `OCPP-2.0.1-SmartCharging/`
-
-AI-authored documentation focusing on the most complex part of OCPP.
-
-- `OCPP-2.0.1-SmartCharging.md`  
-  Charging profiles, purposes, stack levels, validity windows, composite schedule concepts, AC vs DC differences, external constraints, and common pitfalls.
-
-- `OCPP-2.0.1-SmartCharging-Examples.md`  
-  Worked composite schedule walkthroughs, realistic CALL / CALLRESULT payloads, ASCII sequence diagrams.
-
-- `OCPP-2.0.1-SmartCharging-ISO15118.md`  
-  EV charging needs, EV-proposed schedules, AC/DC parameters, and sales tariffs.
-
-These documents explicitly distinguish between:
-- **Spec-defined behavior**
-- **Spec-silent behavior**
-- **Vendor-dependent behavior**
-- **Policy-dependent behavior**
-
----
-
-### 4. Multi-Message Sequences
-
-#### `OCPP-2.0.1-Sequences/`
-
-AI-authored sequence diagrams covering real-world flows:
-
-- `OCPP-2.0.1-Sequences.md`  
-  Boot process, authorization flows, transaction lifecycle, meter values, state machines.
-
-- `OCPP-2.0.1-Sequences-Operational.md`  
-  Offline queueing and replay, reconnection backoff, firmware updates, diagnostics upload, pagination flows.
-
----
-
-### 5. AI Agent Guardrails
-
-This repository includes explicit **AI agent guardrails** that define:
-- Where automated implementation is safe
-- Where escalation to a human developer is mandatory
-- How agents should pause and request clarification in ambiguous cases
-
-These guardrails are intentional and critical to correctness.
-
----
-
-## Intended Audience
-
-- Developers implementing OCPP 2.0.1 CSMS or Charging Station software
-- Engineers debugging interoperability issues
-- Teams building tooling, simulators, or emulators
-- AI coding agents working under developer supervision
-
----
-
-## Using with AI Coding Agents
-
-This repository is available as a **Claude Code plugin**:
+### Claude Code Plugin
 
 ```
 /plugin marketplace add https://github.com/alexeimoisseev/ocpp.md
 /plugin install ocpp@ocpp
 ```
 
-See the [AI Agent Setup guide](https://ocpp.md/ai-agent-setup/) for configuration options and usage details.
+### Other AI Agents (Cursor, Windsurf, Copilot, etc.)
+
+Clone and point your agent at the `docs/` directory. See the [AI Agent Setup guide](./docs/AI-AGENT-SETUP.md) for details.
 
 ---
 
-## License
+## Try It
 
-This repository is licensed under the **Apache License, Version 2.0**.
+After installing, try these prompts in your OCPP project. The difference is immediate.
 
-The license applies to the **original documentation, structure, diagrams, and explanations** contained here.
+### "Implement a BootNotification handler"
 
-This repository:
-- Does **not** redistribute the official OCPP specification
-- Does **not** relicense OCPP or OCA intellectual property
+Without the plugin, your AI will guess the response fields. With it, the agent reads the actual schema — knows that `interval` is required, `status` is an enum of `Accepted`/`Pending`/`Rejected`, and that a station in `Pending` state must only send `BootNotification`, `GetReport`, and `TransactionEvent` until accepted.
 
-OCPP® is a trademark of the Open Charge Alliance.  
-This project is **not affiliated with or endorsed by the OCA**.
+### `/ocpp smart-charging` — then ask it to build a SetChargingProfile request
 
-See the `LICENSE` file for details.
+Run `/ocpp smart-charging` to load the full deep-dive, then ask for a load balancing profile. The agent knows that `TxDefaultProfile` applies to all transactions on an EVSE, that `stackLevel` determines priority, that `chargingRateUnit` must match per schedule — and it flags that **composite schedule overlap resolution is spec-silent** instead of silently picking a behavior.
 
----
+### "Handle offline transaction queueing"
 
-## Disclaimer
+The agent reads the sequence diagrams and knows the exact flow: queue `TransactionEvent` messages with `offline=true`, replay in order on reconnect, handle `duplicate` detection. It also flags that queue size limits, eviction policy, and clock drift handling are **vendor-dependent** — decisions you need to make, not the AI.
 
-This is **non-normative documentation**.
+### "What happens if Authorize returns Unknown?"
 
-While care has been taken to ensure accuracy, implementation details may vary by:
-- Charging Station hardware
-- Firmware capabilities
-- Local grid and regulatory requirements
-- Business and operational policy
-
-Always verify behavior against:
-- The official OCPP 2.0.1 specification
-- The Open Charge Alliance Compliance Testing Tool (OCTT)
-- Vendor documentation
+Instead of a vague answer, the agent reads the schema and tells you: `AuthorizationStatusEnumType` has exactly 10 values, `Unknown` means the token isn't in the local cache or auth list, and the station behavior depends on your `AllowOfflineTxForUnknownId` configuration variable — which is **policy-dependent**.
 
 ---
 
-## Contributions
+## What's Inside
 
-Contributions are welcome if they:
-- Improve clarity
-- Fix factual errors
-- Add examples
-- Better distinguish spec-defined vs implementation-dependent behavior
+| Content | Count | Source |
+|---------|-------|--------|
+| Message schemas (field-level) | 64 | Generated from OCA JSON schemas |
+| Shared data types (enums + composites) | 34 | Generated from OCA JSON schemas |
+| Functional blocks | 10 | Provisioning, Authorization, Transactions, Smart Charging, Firmware, Security, Diagnostics, Availability, Reservation, Display |
+| Smart charging deep-dive | 3 docs | Profiles, composite schedules, AC/DC, ISO 15118, worked examples |
+| Sequence diagrams | 2 docs | Boot, auth, transactions, offline replay, firmware updates, diagnostics |
+| Escalation markers | Throughout | SPEC-SILENT, VENDOR-DEPENDENT, POLICY-DEPENDENT |
 
-All contributions must remain **non-normative** and **original**.
+All schemas are mechanically extracted from the official OCA JSON schemas. Behavioral documentation distinguishes between spec-defined, spec-silent, vendor-dependent, and policy-dependent areas. See the [Methodology](./docs/METHODOLOGY.md) for the full trust model.
 
 ---
 
-## Final Note
+## The Escalation Model
 
-This repository exists to reduce ambiguity — not to hide it.
+This is what makes OCPP.md different from just dumping the spec into context.
 
-Where the OCPP specification is silent, this documentation makes that silence explicit
-and requires human decisions rather than assumptions.
+The OCPP 2.0.1 specification has **deliberate gaps** — areas where behavior depends on hardware, business rules, or grid requirements. Most AI agents silently fill these gaps with plausible-sounding defaults. OCPP.md makes them stop and ask you.
 
-That is a feature, not a limitation.
+Every ambiguous area in the docs is marked:
+
+- **SPEC-SILENT** — The spec doesn't define this. You must decide.
+- **VENDOR-DEPENDENT** — Depends on your charging station hardware/firmware.
+- **POLICY-DEPENDENT** — Depends on your business rules or grid operator requirements.
+
+By default, the agent stops and asks. If you want it to pick reasonable defaults during prototyping, add this to your `CLAUDE.md`:
+
+```
+For OCPP: use pragmatic escalation mode.
+```
+
+---
+
+## Who This Is For
+
+- Developers building OCPP 2.0.1 CSMS or Charging Station software
+- Engineers debugging interoperability between vendors
+- Teams building simulators, testing tools, or certification tooling
+- Anyone using AI coding agents on EV charging infrastructure
+
+---
+
+## Contributing
+
+Contributions welcome — especially if they improve clarity, fix errors, add worked examples, or better distinguish spec-defined vs implementation-dependent behavior. All contributions must remain non-normative and original.
+
+---
+
+<details>
+<summary>License & Disclaimer</summary>
+
+### License
+
+Licensed under **Apache License, Version 2.0**. The license applies to the original documentation, structure, diagrams, and explanations. This repository does not redistribute or relicense the official OCPP specification or OCA intellectual property. See the `LICENSE` file for details.
+
+### Disclaimer
+
+This is **non-normative documentation**. Implementation details may vary by charging station hardware, firmware, local grid requirements, and business policy. Always verify against the official OCPP 2.0.1 specification, the OCA Compliance Testing Tool (OCTT), and vendor documentation.
+
+OCPP is a trademark of the Open Charge Alliance. This project is not affiliated with or endorsed by the OCA.
+
+</details>

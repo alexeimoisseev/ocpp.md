@@ -7,6 +7,7 @@ description: >
   keywords: OCPP, charging station, CSMS, EVSE, charging profile, BootNotification,
   TransactionEvent, SetChargingProfile, or any OCPP message name.
 user-invocable: true
+allowed-tools: Read, Grep, Glob
 argument-hint: "[topic: smart-charging | authorize | transactions | schemas | sequences | ...]"
 ---
 

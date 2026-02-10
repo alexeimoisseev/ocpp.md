@@ -35,6 +35,7 @@ CONTENT_FILES = [
     ("docs/OCPP-2.0.1.md", "ocpp-2.0.1"),
     ("docs/OCPP-2.0.1-DataTypes.md", "ocpp-2.0.1/data-types"),
     ("docs/METHODOLOGY.md", "methodology"),
+    ("docs/AI-AGENT-SETUP.md", "ai-agent-setup"),
     ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Authorization.md", "ocpp-2.0.1/schemas/authorization"),
     ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Availability.md", "ocpp-2.0.1/schemas/availability"),
     ("docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md", "ocpp-2.0.1/schemas/diagnostics"),

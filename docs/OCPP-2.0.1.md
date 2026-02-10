@@ -507,11 +507,10 @@ The plugin provides a hybrid reference: a compact inline summary (all 64 message
 
 ### Escalation Handling
 
-The OCPP spec has areas that are silent, vendor-dependent, or policy-dependent. The plugin prevents the agent from silently guessing in these areas. Configure the behavior in your project's `CLAUDE.md`:
+The OCPP spec has areas that are silent, vendor-dependent, or policy-dependent. The plugin prevents the agent from silently guessing in these areas. By default it uses **strict** mode (stops and asks). To switch to pragmatic mode, add to your `CLAUDE.md`:
 
 ```
-ocpp:
-  escalation: strict
+For OCPP: use pragmatic escalation mode.
 ```
 
 - **strict** (default) — agent stops and asks before making assumptions

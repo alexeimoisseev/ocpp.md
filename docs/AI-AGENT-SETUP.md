@@ -59,13 +59,12 @@ If you prefer not to use the plugin system:
 
 ### Escalation Strictness
 
-The OCPP specification has areas that are silent, vendor-dependent, or policy-dependent. The plugin controls how the agent handles these:
+The OCPP specification has areas that are silent, vendor-dependent, or policy-dependent. The plugin controls how the agent handles these.
 
-Add to your project's `CLAUDE.md`:
+By default, the agent uses **strict** mode — it stops and asks you before making assumptions. To change this, add a line to your project's `CLAUDE.md`:
 
 ```
-ocpp:
-  escalation: strict
+For OCPP: use pragmatic escalation mode.
 ```
 
 | Mode | Behavior |

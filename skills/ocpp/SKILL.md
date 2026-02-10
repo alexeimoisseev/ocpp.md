@@ -140,12 +140,15 @@ Behavior depends on business rules, site configuration, or grid operator require
 
 ### Escalation Strictness
 
-Check the developer's project for escalation configuration. Look for this in CLAUDE.md or project config:
+Check the developer's project `CLAUDE.md` for escalation preferences. They may write something like:
 
-```
-ocpp:
-  escalation: strict | pragmatic
-```
+> For OCPP: use pragmatic escalation mode.
+
+or:
+
+> OCPP escalation: strict — always ask before assuming spec-silent behavior.
+
+Two modes:
 
 - **strict (default):** Stop and ask the developer before proceeding. Present specific options. Do not write code for the ambiguous area until answered.
 - **pragmatic:** Flag the ambiguity but pick a reasonable default. Leave a visible annotation:
@@ -153,7 +156,7 @@ ocpp:
   // OCPP SPEC-SILENT: [description of assumption]. Verify this matches your requirements.
   ```
 
-If no configuration is found, default to **strict**.
+If no escalation preference is found in `CLAUDE.md`, default to **strict**.
 
 ## Documentation File Map
 

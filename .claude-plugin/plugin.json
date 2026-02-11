@@ -1,7 +1,7 @@
 {
   "name": "ocpp",
   "version": "0.1.0",
-  "description": "OCPP 2.0.1 protocol reference for AI-assisted EV charging development",
+  "description": "OCPP protocol reference (2.0.1 & 1.6J) for AI-assisted EV charging development",
   "author": {
     "name": "Alexei Moisseev",
     "url": "https://github.com/alexeimoisseev"

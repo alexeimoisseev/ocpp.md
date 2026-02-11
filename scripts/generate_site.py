@@ -29,7 +29,7 @@ OUTPUT_DIR = ROOT / "public"
 
 # Markdown files to convert: (source_path, clean_url_path)
 # Each page outputs to public/<url_path>/index.html
-INDEX_SOURCE = "docs/OCPP-2.0.1.md"
+INDEX_SOURCE = "docs/index.md"
 
 CONTENT_FILES = [
     ("docs/OCPP-2.0.1.md", "ocpp-2.0.1"),
@@ -51,6 +51,16 @@ CONTENT_FILES = [
     ("docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging.md", "ocpp-2.0.1/smart-charging"),
     ("docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-Examples.md", "ocpp-2.0.1/smart-charging/examples"),
     ("docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-ISO15118.md", "ocpp-2.0.1/smart-charging/iso15118"),
+    # OCPP 1.6J
+    ("docs/OCPP-1.6J.md", "ocpp-1.6j"),
+    ("docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md", "ocpp-1.6j/schemas/core"),
+    ("docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-SmartCharging.md", "ocpp-1.6j/schemas/smart-charging"),
+    ("docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Firmware.md", "ocpp-1.6j/schemas/firmware"),
+    ("docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-LocalAuthList.md", "ocpp-1.6j/schemas/local-auth-list"),
+    ("docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Reservation.md", "ocpp-1.6j/schemas/reservation"),
+    ("docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-RemoteTrigger.md", "ocpp-1.6j/schemas/remote-trigger"),
+    ("docs/OCPP-1.6J-Sequences/OCPP-1.6J-Sequences.md", "ocpp-1.6j/sequences"),
+    ("docs/OCPP-1.6J-SmartCharging/OCPP-1.6J-SmartCharging.md", "ocpp-1.6j/smart-charging"),
 ]
 
 # Mapping: normalized .md source path -> clean URL path (for link rewriting)
@@ -63,75 +73,30 @@ STATIC_FILES = [
     "_headers",
 ]
 
-# Index page TOC — hardcoded short labels matching the hand-crafted index.html
+# Index page TOC — short labels for the landing page sticky nav
 INDEX_TOC = [
-    ("what-is-ocpp", "Overview"),
-    ("architecture", "Architecture"),
-    ("messages", "Messages"),
-    ("key-messages", "Key Messages"),
-    ("functional-blocks", "Functional Blocks"),
-    ("config", "Configuration"),
-    ("migration", "1.6 \u2192 2.0.1"),
-    ("patterns", "Patterns"),
-    ("ai-agents", "AI Agents"),
-    ("glossary", "Glossary"),
+    ("why-this-exists", "Why"),
+    ("using-with-ai-agents", "Setup"),
+    ("ocpp-201", "2.0.1"),
+    ("ocpp-16j", "1.6J"),
+    ("the-escalation-model", "Escalation"),
+    ("about-this-project", "About"),
 ]
 
 # Section ID overrides for the index page (markdown h2 text -> desired id)
 INDEX_HEADING_IDS = {
-    "1. What is OCPP?": "what-is-ocpp",
-    "2. Architecture Overview": "architecture",
-    "2. Architecture Overview (OCPP 2.0.1)": "architecture",
-    "3. Message Structure (RPC Framework)": "messages",
-    "4. Key Messages": "key-messages",
-    "4. Key Messages (OCPP 2.0.1)": "key-messages",
-    "5. Functional Blocks": "functional-blocks",
-    "6. Key Configuration Variables": "config",
-    "7. OCPP 1.6 vs 2.0.1 — Key Differences": "migration",
-    "7. OCPP 1.6 vs 2.0.1 \u2014 Key Differences": "migration",
-    "8. Common Implementation Patterns": "patterns",
-    "9. JSON Schema Validation": "json-schema",
-    "10. Testing & Compliance": "testing",
-    "10. Testing &amp; Compliance": "testing",
-    "11. Useful Resources": "resources",
-    "12. Using with AI Coding Agents": "ai-agents",
-    "13. Glossary": "glossary",
+    "Why This Exists": "why-this-exists",
+    "OCPP 2.0.1": "ocpp-201",
+    "OCPP 1.6J": "ocpp-16j",
+    "The Escalation Model": "the-escalation-model",
+    "Using with AI Agents": "using-with-ai-agents",
+    "About This Project": "about-this-project",
 }
 
 # Subsection ID overrides for the index page
 INDEX_SUBHEADING_IDS = {
-    "Version History": "version-history",
-    "2.1 Roles": "roles",
-    "2.2 Device Model": "device-model",
-    "2.3 Transport": "transport",
-    "2.4 Security Profiles": "security-profiles",
-    "3.1 CALL (Request)": "call",
-    "3.2 CALLRESULT (Response)": "callresult",
-    "3.3 CALLERROR (Error Response)": "callerror",
-    "3.4 Message Flow Rules": "message-flow-rules",
-    "4.1 Provisioning & Lifecycle": "provisioning",
-    "4.1 Provisioning &amp; Lifecycle": "provisioning",
-    "4.2 Authorization": "authorization",
-    "4.3 Transactions": "transactions",
-    "4.4 Metering": "metering",
-    "4.5 Smart Charging": "smart-charging",
-    "4.6 Firmware Management": "firmware-management",
-    "4.7 Diagnostics & Logging": "diagnostics",
-    "4.7 Diagnostics &amp; Logging": "diagnostics",
-    "4.8 Reservation": "reservation",
-    "4.9 Remote Triggers": "remote-triggers",
-    "4.10 Certificate Management": "certificate-management",
-    "4.11 Local Auth & Display": "local-auth-display",
-    "4.11 Local Auth &amp; Display": "local-auth-display",
-    "4.12 Data Transfer": "data-transfer",
-    "TransactionEvent Details": "transaction-event-details",
-    "Transaction Lifecycle (typical flow)": "transaction-lifecycle",
-    "Charging Profile Structure": "charging-profile-structure",
-    "1.6 Message → 2.0.1 Mapping": "message-mapping",
-    "1.6 Message \u2192 2.0.1 Mapping": "message-mapping",
-    "8.1 Boot Sequence": "boot-sequence",
-    "8.2 Offline Behavior": "offline-behavior",
-    "8.3 Reconnection Strategy": "reconnection-strategy",
+    "Claude Code": "claude-code",
+    "Other Agents (Cursor, Windsurf, Copilot, etc.)": "other-agents",
 }
 
 
@@ -1034,9 +999,14 @@ def build_page(
     if is_index:
         path_to_index = ""
     else:
-        index_url = MD_TO_URL.get(os.path.normpath(INDEX_SOURCE), "")
-        rel = os.path.relpath(index_url, url_path).replace('\\', '/')
-        path_to_index = rel + '/'
+        index_url = MD_TO_URL.get(os.path.normpath(INDEX_SOURCE))
+        if index_url:
+            rel = os.path.relpath(index_url, url_path).replace('\\', '/')
+            path_to_index = rel + '/'
+        else:
+            # INDEX_SOURCE not in CONTENT_FILES — it's rendered at site root
+            depth = url_path.count('/')
+            path_to_index = '../' * (depth + 1) if depth >= 0 else '/'
 
     # Page title for <title> tag
     if is_index:
@@ -1046,7 +1016,7 @@ def build_page(
 
     if not description:
         if is_index:
-            description = "A structured OCPP protocol reference for AI agents and developers working on EV charging infrastructure. Covers OCPP 2.0.1 specification."
+            description = "A structured OCPP protocol reference for AI agents and developers working on EV charging infrastructure. Covers OCPP 2.0.1 and 1.6J specifications."
         else:
             description = f"{title} \u2014 OCPP protocol reference for AI agents."
 
@@ -1057,10 +1027,10 @@ def build_page(
   <div class="inner">
     <div class="domain">ocpp.md</div>
     <h1>Open Charge Point Protocol Reference</h1>
-    <p class="subtitle">A structured reference for AI agents and developers working on EV charging infrastructure.</p>
+    <p class="subtitle">Schemas, sequences, smart charging, and escalation markers for AI agents and developers.</p>
     <div class="meta">
-      <span>OCPP 2.0.1</span>
-      <span><a href="{raw_md_href}" style="color: var(--text-light); text-decoration: underline; text-decoration-color: rgba(138,133,124,0.4);">Raw Markdown \u2197</a></span>
+      <span><a href="./ocpp-2.0.1/" style="color: var(--text-light); text-decoration: underline; text-decoration-color: rgba(138,133,124,0.4);">OCPP 2.0.1</a></span>
+      <span><a href="./ocpp-1.6j/" style="color: var(--text-light); text-decoration: underline; text-decoration-color: rgba(138,133,124,0.4);">OCPP 1.6J</a></span>
     </div>
   </div>
 </header>"""

@@ -1,29 +1,47 @@
 ---
 name: ocpp
 description: >
-  OCPP 2.0.1 protocol reference for EV charging infrastructure development.
-  Use when working with OCPP messages, charging station code, CSMS backends,
-  smart charging, transaction handling, or EV charging protocols. Activates on
-  keywords: OCPP, charging station, CSMS, EVSE, charging profile, BootNotification,
-  TransactionEvent, SetChargingProfile, or any OCPP message name.
+  OCPP protocol reference for EV charging infrastructure development.
+  Covers OCPP 2.0.1 and OCPP 1.6J. Use when working with OCPP messages,
+  charging station code, CSMS/Central System backends, smart charging,
+  transaction handling, or EV charging protocols. Activates on keywords:
+  OCPP, charging station, charge point, CSMS, Central System, EVSE,
+  charging profile, BootNotification, TransactionEvent, StartTransaction,
+  StopTransaction, SetChargingProfile, or any OCPP message name.
 user-invocable: true
 allowed-tools: Read, Grep, Glob
-argument-hint: "[topic: smart-charging | authorize | transactions | schemas | sequences | ...]"
+argument-hint: "[topic: smart-charging | authorize | transactions | schemas | sequences | 1.6 | ...]"
 ---
 
-# OCPP 2.0.1 — AI Agent Reference
+# OCPP — AI Agent Reference
 
-You are assisting a developer working on EV charging infrastructure using OCPP 2.0.1.
-This skill gives you structured knowledge of the protocol. Use it to provide accurate
+You are assisting a developer working on EV charging infrastructure using OCPP.
+This skill covers both **OCPP 2.0.1** and **OCPP 1.6J**. Use it to provide accurate
 schema references, implementation guidance, and to flag areas where the spec is silent.
+
+## Version Detection
+
+Detect the OCPP version from the developer's code:
+- **1.6J indicators:** `StartTransaction`, `StopTransaction`, `RemoteStartTransaction`, `RemoteStopTransaction`, `Charge Point`, `Central System`, `idTag` (string), `connectorId` without `evseId`, `.req` / `.conf` naming
+- **2.0.1 indicators:** `TransactionEvent`, `RequestStartTransaction`, `RequestStopTransaction`, `Charging Station`, `CSMS`, `IdTokenType` (object), `evseId`, `Request` / `Response` naming
+
+If unclear, ask the developer which version they're using.
 
 ## Quick Reference
 
-**What is OCPP:** Open Charge Point Protocol — communication between EV Charging Stations (CS) and a Charging Station Management System (CSMS) over WebSocket + JSON. The CS initiates the connection. Both sides can send messages. OCPP 2.0.1 is the current recommended version.
+**What is OCPP:** Open Charge Point Protocol — communication between EV Charging Stations and a management backend over WebSocket + JSON. The station initiates the connection. Both sides can send messages.
 
-**Device Model:** Charging Station → EVSE(s) → Connector(s). `evseId` and `connectorId` are 1-indexed. `evseId=0` means the whole station.
+### OCPP 2.0.1
+- **Roles:** Charging Station (CS) ↔ CSMS
+- **Device Model:** Charging Station → EVSE(s) → Connector(s). `evseId` and `connectorId` are 1-indexed. `evseId=0` means the whole station.
+- **64 messages**, organized by Functional Block
 
-**Message Frame:** JSON-RPC-like. Three types:
+### OCPP 1.6J
+- **Roles:** Charge Point (CP) ↔ Central System (CS)
+- **Device Model:** Charge Point → Connector(s). `connectorId` is 1-indexed. `connectorId=0` means the whole Charge Point. No EVSE concept.
+- **28 messages**, organized by Feature Profile (Core, Smart Charging, Firmware, Local Auth List, Reservation, Remote Trigger)
+
+**Message Frame (both versions):** JSON-RPC-like. Three types:
 - `CALL` — `[2, messageId, action, payload]`
 - `CALLRESULT` — `[3, messageId, payload]`
 - `CALLERROR` — `[4, messageId, errorCode, errorDescription, errorDetails]`
@@ -115,7 +133,49 @@ schema references, implementation guidance, and to flag areas where the spec is 
 ### Data Transfer
 - `DataTransfer` (CS↔CSMS) — Bidirectional vendor extension
 
-## Key Data Types
+## All 28 OCPP 1.6J Messages
+
+### Core (required profile)
+- `Authorize` (CP→CS) — Validate idTag
+- `BootNotification` (CP→CS) — Charge Point registers after (re)boot
+- `ChangeAvailability` (CS→CP) — Set connector operative/inoperative
+- `ChangeConfiguration` (CS→CP) — Set a configuration key
+- `ClearCache` (CS→CP) — Clear authorization cache
+- `DataTransfer` (CP↔CS) — Vendor-specific data exchange
+- `GetConfiguration` (CS→CP) — Read configuration keys
+- `Heartbeat` (CP→CS) — Keepalive
+- `MeterValues` (CP→CS) — Periodic meter readings
+- `RemoteStartTransaction` (CS→CP) — Remote start
+- `RemoteStopTransaction` (CS→CP) — Remote stop
+- `Reset` (CS→CP) — Reboot Charge Point
+- `StartTransaction` (CP→CS) — Transaction started
+- `StatusNotification` (CP→CS) — Connector status/error change
+- `StopTransaction` (CP→CS) — Transaction ended
+- `UnlockConnector` (CS→CP) — Physically unlock connector
+
+### Smart Charging
+- `SetChargingProfile` (CS→CP) — Install charging profile
+- `ClearChargingProfile` (CS→CP) — Remove profiles
+- `GetCompositeSchedule` (CS→CP) — Get effective schedule
+
+### Firmware Management
+- `GetDiagnostics` (CS→CP) — Request diagnostic log upload
+- `DiagnosticsStatusNotification` (CP→CS) — Upload progress
+- `UpdateFirmware` (CS→CP) — Trigger firmware update
+- `FirmwareStatusNotification` (CP→CS) — Update progress
+
+### Local Auth List Management
+- `SendLocalList` (CS→CP) — Push local authorization list
+- `GetLocalListVersion` (CS→CP) — Query list version
+
+### Reservation
+- `ReserveNow` (CS→CP) — Reserve a connector
+- `CancelReservation` (CS→CP) — Cancel reservation
+
+### Remote Trigger
+- `TriggerMessage` (CS→CP) — Request CP to send a specific message
+
+## Key Data Types (OCPP 2.0.1)
 
 - **IdTokenType** — User identification (eMAID, RFID, etc.) with optional groupIdToken
 - **ChargingProfileType** — Charging limits: id, stackLevel, purpose, kind, chargingSchedule
@@ -181,8 +241,18 @@ When you need detailed field-level schemas, sequence diagrams, or worked example
 | **Smart Charging deep-dive** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging.md` |
 | **Smart Charging worked examples** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-Examples.md` |
 | **ISO 15118 + Smart Charging** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-ISO15118.md` |
-| **OCPP overview + migration guide** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1.md` |
+| **OCPP 2.0.1 overview + migration guide** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1.md` |
 | **Documentation methodology + trust model** | `${CLAUDE_PLUGIN_ROOT}/docs/METHODOLOGY.md` |
+| | |
+| **OCPP 1.6J overview + config keys** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J.md` |
+| **1.6J Core schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md` |
+| **1.6J Smart Charging schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-SmartCharging.md` |
+| **1.6J Firmware schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Firmware.md` |
+| **1.6J Local Auth List schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-LocalAuthList.md` |
+| **1.6J Reservation schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Reservation.md` |
+| **1.6J Remote Trigger schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-RemoteTrigger.md` |
+| **1.6J Message sequences** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-Sequences/OCPP-1.6J-Sequences.md` |
+| **1.6J Smart Charging deep-dive** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-SmartCharging/OCPP-1.6J-SmartCharging.md` |
 
 ### How to use the file map
 
@@ -195,6 +265,17 @@ When you need detailed field-level schemas, sequence diagrams, or worked example
 
 If invoked with `/ocpp <topic>`, immediately read the relevant files:
 
+**OCPP 1.6J topics:**
+- `/ocpp 1.6` or `/ocpp 1.6j` → read OCPP-1.6J.md overview
+- `/ocpp 1.6 smart-charging` → read 1.6J SmartCharging schemas + deep-dive
+- `/ocpp 1.6 schemas` → read all 1.6J Schema files
+- `/ocpp 1.6 sequences` → read 1.6J Sequences file
+- `/ocpp 1.6 core` → read 1.6J Core schemas
+- `/ocpp 1.6 firmware` → read 1.6J Firmware schemas
+- `/ocpp 1.6 auth-list` → read 1.6J LocalAuthList schemas
+- `/ocpp 1.6 reservation` → read 1.6J Reservation schemas
+
+**OCPP 2.0.1 topics (default):**
 - `/ocpp smart-charging` → read all 3 SmartCharging files
 - `/ocpp authorize` or `/ocpp authorization` → read Authorization schemas
 - `/ocpp transactions` → read Transaction schemas + Sequences
@@ -216,7 +297,7 @@ If invoked with `/ocpp <topic>`, immediately read the relevant files:
 
 2. **Respect the escalation model.** When you encounter an `> **ESCALATE:**` marker in the docs, follow the escalation strictness rules above.
 
-3. **Assume 2.0.1 unless told otherwise.** If the developer doesn't specify an OCPP version, assume 2.0.1. If their code uses 1.6-style messages (e.g. `StartTransaction` instead of `TransactionEvent`), note the version mismatch and ask.
+3. **Detect version from context.** Use the version detection rules above. If the code uses `StartTransaction`/`StopTransaction`, it's 1.6J — read 1.6J docs. If it uses `TransactionEvent`, it's 2.0.1. If no version indicators are present, assume 2.0.1 and mention the assumption.
 
 4. **Don't invent protocol behavior.** If you're unsure whether something is spec-defined, check the docs first. If the docs don't cover it, say so explicitly rather than guessing.
 

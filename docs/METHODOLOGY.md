@@ -1,6 +1,6 @@
 # How the Documentation Was Produced
 
-This document explains how the OCPP 2.0.1 reference files were produced, what guarantees they carry, and where they might fall short. There are two categories of documentation with **different trust models**:
+This document explains how the OCPP reference files were produced, what guarantees they carry, and where they might fall short. The documentation covers **OCPP 2.0.1** and **OCPP 1.6J**. Both versions use two categories of documentation with **different trust models**:
 
 1. **Mechanically generated** — schema reference files extracted from OCA JSON schemas by a Python script. High confidence, verifiable.
 2. **AI-authored** — deep-dive documents written by an AI model (Claude, Anthropic) from training data knowledge. Contains verifiable schema-derived facts alongside spec-knowledge that should be verified against the official specification.
@@ -207,3 +207,70 @@ The rationale for this escalation model is documented in [HUMAN_INTERVENTION.md]
 | Worked examples and pitfalls | AI-generated guidance (not from any official source) |
 
 **The official OCA specification is the authoritative source for all OCPP behavior.** These AI-authored documents are a practical reference to accelerate understanding, not a replacement for the specification.
+
+---
+
+# Part 3: OCPP 1.6J Documentation
+
+## Schema Documentation (Mechanically Generated)
+
+### Source Material
+
+The input is the **official OCA JSON Schema files** for OCPP 1.6 edition 2 — 56 files (28 request/response pairs) published by the Open Charge Alliance. These are JSON Schema draft-04 files, simpler than the 2.0.1 draft-06 schemas.
+
+**The schema files are not bundled with this repository.** To regenerate or verify the documentation, download the official OCPP 1.6 JSON schemas from the [Open Charge Alliance](https://openchargealliance.org) (free registration required) and place them in `OCPP_1.6_documentation/schemas/json/`.
+
+### Key Differences from 2.0.1 Schema Extraction
+
+- **No shared type definitions** — 1.6J schemas define all types inline (no `$ref` or `definitions` blocks). There is no separate DataTypes file. Nested types like ChargingProfile, ChargingSchedule, MeterValue, and SampledValue are documented as sub-tables where they appear in each message.
+- **Feature Profile grouping** — Messages are grouped by the spec's 6 Feature Profiles (Core, Firmware Management, Local Auth List Management, Reservation, Smart Charging, Remote Trigger) rather than by functional blocks.
+- **Simpler descriptions** — 1.6J schemas contain no description text. Field semantics come from the prose specification.
+
+### Generation Process
+
+A Python script (`scripts/extract_schemas_16.py`) performs a deterministic extraction:
+
+1. **Parse** — All 56 `.json` schema files are loaded.
+2. **Map to profiles** — Each of the 28 messages is assigned to its Feature Profile.
+3. **Extract fields** — For each message, request and response properties, required arrays, enum values, and constraints are extracted.
+4. **Render nested types** — Inline objects and arrays of objects are rendered as sub-tables under the parent field.
+5. **Generate markdown** — Tables, enum lists, and example payloads are generated programmatically.
+
+### What Is Accurate (High Confidence)
+
+Same guarantees as 2.0.1: field names, data types, required/optional status, enum values, string/numeric constraints, and date-time format indicators are extracted mechanically from the JSON schemas.
+
+### How to Regenerate
+
+1. Download the official OCPP 1.6 JSON schemas from [openchargealliance.org](https://openchargealliance.org).
+2. Place all `*.json` files in `OCPP_1.6_documentation/schemas/json/`.
+3. Run:
+
+```
+python3 scripts/extract_schemas_16.py
+```
+
+This overwrites all files in `docs/OCPP-1.6J-Schemas/`.
+
+## AI-Authored Reference Documents (OCPP 1.6J)
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `OCPP-1.6J.md` | Overview: architecture, feature profiles, all 28 messages, connector status model, configuration keys, differences from 2.0.1 |
+| `OCPP-1.6J-Sequences/OCPP-1.6J-Sequences.md` | Message sequences: boot, authorization, transaction lifecycle, status notifications, offline behavior |
+| `OCPP-1.6J-SmartCharging/OCPP-1.6J-SmartCharging.md` | Smart charging: profile purposes, stack levels, schedule kinds, composite schedule, common pitfalls |
+
+### How These Were Produced
+
+These documents were written by Claude (Anthropic) referencing the official OCPP 1.6 edition 2 specification PDF. The AI model extracted key information from the spec and authored the content in a collaborative session with the repository maintainer. The same four-tier confidence model applies (Schema-derived, Schema-described, Spec-knowledge, Interpretation).
+
+### Source Material
+
+| Source | Trust |
+|--------|-------|
+| `OCPP_1.6_documentation/schemas/json/` — 56 JSON schema files | **High** — mechanically extracted |
+| `OCPP_1.6_documentation/ocpp-1.6 edition 2.pdf` — prose specification | **Medium** — AI-authored from spec, verify against official document |
+| `OCPP_1.6_documentation/ocpp-1.6-errata-sheet.pdf` — errata | Referenced where relevant |
+| `OCPP_1.6_documentation/ocpp-j-1.6-specification.pdf` — JSON transport spec | Referenced for message framing |

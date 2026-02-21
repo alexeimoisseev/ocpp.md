@@ -86,6 +86,7 @@ The most widely deployed version. 28 messages organized by Feature Profile. Uses
 
 - [Sequences](./ocpp-1.6j/sequences/) — Boot, authorization, transaction lifecycle, status reporting, offline behavior
 - [Smart Charging Deep-Dive](./ocpp-1.6j/smart-charging/) — Profile purposes, stack levels, composite schedule, common pitfalls
+- [Charging Profile Generator](./ocpp-1.6j/smart-charging/generator/) — Interactive tool to build SetChargingProfile.req payloads
 
 ---
 

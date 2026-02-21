@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCPP 1.6J Charging Profile Generator</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Highlight.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --text: #1a1a1a;
+      --text-muted: #6b6b6b;
+      --accent: #2d6a4f;
+      --accent-hover: #1b4332;
+      --border: #d4d0c8;
+      --input-bg: #ffffff;
+      --code-bg: #1e1e1c;
+      --font-serif: 'Source Serif 4', Georgia, serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+      --radius: 4px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-serif);
+      font-size: 17px;
+      line-height: 1.72;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .page-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    /* --- Header --- */
+    .page-header {
+      border-bottom: 1px solid var(--border);
+      padding: 3rem 0 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .page-header h1 {
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .page-header .subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.01em;
+    }
+
+    /* --- Form --- */
+    #profile-form {
+      margin-bottom: 3rem;
+    }
+
+    .form-section {
+      margin-bottom: 2rem;
+    }
+
+    .form-section-title {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0.25rem;
+    }
+
+    .form-group label {
+      font-family: var(--font-serif);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+
+    .form-group .helper {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    .form-group .hint {
+      font-family: var(--font-mono);
+      font-size: 0.73rem;
+      color: var(--accent);
+      margin-top: 0.25rem;
+      line-height: 1.45;
+    }
+
+    label .required {
+      color: #c0392b;
+      margin-left: 2px;
+    }
+
+    .form-group input,
+    .form-group select {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--input-bg);
+      color: var(--text);
+      transition: border-color 0.15s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.12);
+    }
+
+    .form-group select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b6b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    /* --- Buttons --- */
+    .btn {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 8px 18px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* --- Hidden utility --- */
+    .hidden {
+      display: none;
+    }
+
+    /* --- Output panel placeholder --- */
+    #output-panel {
+      margin-top: 2rem;
+    }
+
+    /* --- Periods section --- */
+    #periods-container {
+      margin-bottom: 1rem;
+    }
+
+    .period-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--input-bg);
+    }
+
+    .period-field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .period-field label {
+      font-family: var(--font-serif);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .period-field input {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color 0.15s ease;
+    }
+
+    .period-field input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.12);
+    }
+
+    .period-field .period-start { width: 80px; }
+    .period-field .period-limit { width: 90px; }
+    .period-field .period-phases { width: 60px; }
+
+    .period-remove {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 4px 8px;
+      border: none;
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .period-remove:hover {
+      color: #c0392b;
+      background: rgba(192, 57, 43, 0.08);
+    }
+
+    #add-period-btn {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    #add-period-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* --- Output panel header --- */
+    .output-header {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .output-toggle {
+      display: flex;
+    }
+
+    .toggle-btn {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 6px 16px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .toggle-btn:first-child {
+      border-radius: 20px 0 0 20px;
+      border-right: none;
+    }
+
+    .toggle-btn:last-child {
+      border-radius: 0 20px 20px 0;
+    }
+
+    .toggle-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .toggle-btn:not(.active):hover {
+      background: rgba(45, 106, 79, 0.08);
+    }
+
+    .btn-copy {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    }
+
+    .btn-copy:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(45, 106, 79, 0.06);
+    }
+
+    /* --- JSON output --- */
+    #output-panel pre {
+      background: var(--code-bg);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      overflow-x: auto;
+    }
+
+    #output-panel pre code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    /* --- Validation --- */
+    .field-error {
+      border-color: #c0392b !important;
+      box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.12) !important;
+    }
+
+    .error-msg {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #c0392b;
+      margin-top: 0.2rem;
+    }
+
+    .output-warning {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #c0392b;
+      margin-left: 0.75rem;
+    }
+
+    .output-warning::before {
+      content: '\26A0';
+      font-size: 0.95rem;
+    }
+
+    /* --- Period numbering --- */
+    .period-number {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      min-width: 22px;
+      align-self: center;
+    }
+
+    /* --- Examples --- */
+    .examples-section {
+      margin-bottom: 2.5rem;
+    }
+
+    .examples-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .example-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      background: var(--input-bg);
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .example-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.1);
+    }
+
+    .example-card .example-name {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+
+    .example-card .example-desc {
+      font-family: var(--font-serif);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-small {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-small:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .page-wrapper {
+        padding: 0 1rem 3rem;
+      }
+
+      .page-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .period-row {
+        flex-wrap: wrap;
+      }
+
+      .period-field {
+        flex: 1 1 auto;
+        min-width: 70px;
+      }
+
+      .period-field .period-start,
+      .period-field .period-limit,
+      .period-field .period-phases {
+        width: 100%;
+      }
+
+      #output-panel pre {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .output-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .examples-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <header class="page-header">
+      <h1>OCPP 1.6J Charging Profile Generator</h1>
+      <p class="subtitle">Build SetChargingProfile.req payloads</p>
+    </header>
+
+    <div class="examples-section">
+      <h2 class="form-section-title">Examples</h2>
+      <div class="examples-grid">
+        <div class="example-card" data-example="offpeak">
+          <div class="example-name">Off-Peak AC</div>
+          <div class="example-desc">Daily recurring: 32A at night, 16A during peak hours (08:00-20:00). Typical AC station</div>
+        </div>
+        <div class="example-card" data-example="dcsitelimit">
+          <div class="example-name">DC Site Power Limit</div>
+          <div class="example-desc">Cap a DC fast charger to 150 kW across all connectors</div>
+        </div>
+        <div class="example-card" data-example="dcrampdown">
+          <div class="example-name">DC Ramp Down</div>
+          <div class="example-desc">Start at 150 kW, step down to 50 kW after 20 min to manage grid demand</div>
+        </div>
+        <div class="example-card" data-example="curtailment">
+          <div class="example-name">Emergency Curtailment</div>
+          <div class="example-desc">Immediately stop all charging with a high-priority override (stackLevel 99)</div>
+        </div>
+        <div class="example-card" data-example="dctou">
+          <div class="example-name">DC Time-of-Use</div>
+          <div class="example-desc">Daily tiers in kW: 150 kW off-peak, 75 kW shoulder, 50 kW peak</div>
+        </div>
+        <div class="example-card" data-example="weekday">
+          <div class="example-name">Weekday Schedule</div>
+          <div class="example-desc">Weekly recurring: lower limits on weekdays, full power on weekends</div>
+        </div>
+      </div>
+    </div>
+
+    <form id="profile-form">
+      <div class="form-actions">
+        <button type="button" class="btn-small" id="btn-reset">Reset to defaults</button>
+        <button type="button" class="btn-small" id="btn-clear-storage">Clear saved data</button>
+      </div>
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.5rem;"><span class="required">*</span> Required field</p>
+
+      <!-- Group 1: Target -->
+      <div class="form-section">
+        <h2 class="form-section-title">Target</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="connectorId">Connector ID <span class="required">*</span></label>
+            <input type="number" id="connectorId" value="0" min="0">
+            <span class="hint" id="connectorId-hint">0 = entire charge point, 1+ = specific connector</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 2: Profile Metadata -->
+      <div class="form-section">
+        <h2 class="form-section-title">Profile</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="chargingProfileId">Charging Profile ID <span class="required">*</span></label>
+            <input type="number" id="chargingProfileId" value="1" min="0">
+            <span class="hint">Unique identifier for this profile</span>
+          </div>
+          <div class="form-group">
+            <label for="stackLevel">Stack Level <span class="required">*</span></label>
+            <input type="number" id="stackLevel" value="0" min="0">
+            <span class="hint">Higher levels override lower. Same level + purpose = replacement</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="chargingProfilePurpose">Purpose <span class="required">*</span></label>
+            <select id="chargingProfilePurpose">
+              <option value="ChargePointMaxProfile">ChargePointMaxProfile</option>
+              <option value="TxDefaultProfile" selected>TxDefaultProfile</option>
+              <option value="TxProfile">TxProfile</option>
+            </select>
+            <span class="hint" id="purpose-hint"></span>
+          </div>
+          <div class="form-group">
+            <label for="chargingProfileKind">Kind <span class="required">*</span></label>
+            <select id="chargingProfileKind">
+              <option value="Absolute" selected>Absolute</option>
+              <option value="Recurring">Recurring</option>
+              <option value="Relative">Relative</option>
+            </select>
+            <span class="hint" id="kind-hint"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conditional Fields -->
+      <div class="form-section">
+        <h2 class="form-section-title">Conditional &amp; Optional Fields</h2>
+
+        <!-- Recurrency Kind: shown when Kind = Recurring -->
+        <div id="recurrencyKind-group" class="form-row hidden">
+          <div class="form-group">
+            <label for="recurrencyKind">Recurrency Kind <span class="required">*</span></label>
+            <select id="recurrencyKind">
+              <option value="Daily">Daily</option>
+              <option value="Weekly">Weekly</option>
+            </select>
+            <span class="hint">Daily = repeats every 24h, Weekly = every 168h</span>
+          </div>
+        </div>
+
+        <!-- Transaction ID: shown when Purpose = TxProfile -->
+        <div id="transactionId-group" class="form-row hidden">
+          <div class="form-group">
+            <label for="transactionId">Transaction ID <span class="required">*</span></label>
+            <input type="number" id="transactionId">
+            <span class="hint">Must match the active transaction on this connector</span>
+          </div>
+        </div>
+
+        <!-- Start Schedule: shown when Kind = Absolute or Recurring -->
+        <div id="startSchedule-group" class="form-row">
+          <div class="form-group">
+            <label for="startSchedule">Start Schedule</label>
+            <input type="datetime-local" id="startSchedule">
+            <span class="hint" id="startSchedule-hint"></span>
+          </div>
+        </div>
+
+        <!-- Always-visible optional fields -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="validFrom">Valid From</label>
+            <input type="datetime-local" id="validFrom">
+            <span class="hint">Profile is not active before this time</span>
+          </div>
+          <div class="form-group">
+            <label for="validTo">Valid To</label>
+            <input type="datetime-local" id="validTo">
+            <span class="hint">Profile expires after this time</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="duration">Duration</label>
+            <input type="number" id="duration" min="0">
+            <span class="hint" id="duration-hint">Schedule length in seconds. If empty, last period runs indefinitely</span>
+          </div>
+          <div class="form-group">
+            <label for="minChargingRate">Min Charging Rate</label>
+            <input type="number" id="minChargingRate" step="0.1" min="0">
+            <span class="hint">Informational hint for load balancing, not a hard floor</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="chargingRateUnit">Charging Rate Unit <span class="required">*</span></label>
+            <select id="chargingRateUnit">
+              <option value="A">A (Amps)</option>
+              <option value="W">W (Watts)</option>
+            </select>
+            <span class="hint">Check ChargingScheduleAllowedChargingRateUnit on your CP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Periods -->
+      <div class="form-section">
+        <h2 class="form-section-title">Schedule Periods</h2>
+        <div id="periods-container"></div>
+        <button type="button" class="btn btn-outline" id="add-period-btn">+ Add Period</button>
+      </div>
+
+    </form>
+
+    <div id="output-panel">
+      <h2 class="form-section-title">Output</h2>
+      <div class="output-header">
+        <div class="output-toggle">
+          <button type="button" id="btn-payload" class="toggle-btn active">Payload</button>
+          <button type="button" id="btn-call-frame" class="toggle-btn">OCPP-J CALL</button>
+        </div>
+        <button type="button" id="btn-copy" class="btn-copy" title="Copy to clipboard">Copy</button>
+      </div>
+      <pre><code id="json-output" class="language-json"></code></pre>
+    </div>
+  </div>
+
+  <script>
+    // --- Prevent form submission ---
+    document.getElementById('profile-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+    });
+
+    // --- OCPP-J CALL frame toggle ---
+    let showCallFrame = false;
+    let callFrameUniqueId = crypto.randomUUID().slice(0, 8);
+
+    document.getElementById('btn-call-frame').addEventListener('click', function() {
+      if (showCallFrame) return;
+      showCallFrame = true;
+      callFrameUniqueId = crypto.randomUUID().slice(0, 8);
+      updateToggleButtons();
+      updateOutput();
+    });
+
+    document.getElementById('btn-payload').addEventListener('click', function() {
+      if (!showCallFrame) return;
+      showCallFrame = false;
+      updateToggleButtons();
+      updateOutput();
+    });
+
+    function updateToggleButtons() {
+      document.getElementById('btn-payload').classList.toggle('active', !showCallFrame);
+      document.getElementById('btn-call-frame').classList.toggle('active', showCallFrame);
+    }
+
+    // --- Copy to clipboard ---
+    document.getElementById('btn-copy').addEventListener('click', function() {
+      var text = document.getElementById('json-output').textContent;
+      navigator.clipboard.writeText(text).then(function() {
+        var btn = document.getElementById('btn-copy');
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+      });
+    });
+
+    // --- Contextual hints ---
+    var purposeHints = {
+      ChargePointMaxProfile: 'Max power/current for the entire charge point (all connectors combined). Only connectorId=0',
+      TxDefaultProfile: 'Default schedule applied to new transactions. Persists across sessions',
+      TxProfile: 'Applies only to the current active transaction. Discarded when transaction ends'
+    };
+
+    var kindHints = {
+      Absolute: 'Periods are offsets from a fixed date/time (startSchedule)',
+      Recurring: 'Schedule repeats on a daily or weekly cycle from startSchedule',
+      Relative: 'Periods are offsets from the start of the transaction. No startSchedule needed'
+    };
+
+    var startScheduleHints = {
+      Absolute: 'Anchor date/time for the schedule. If empty, starts at validFrom or now',
+      Recurring: 'Anchors the recurrence cycle. Only the time-of-day matters for Daily'
+    };
+
+    function updateHints() {
+      const purpose = document.getElementById('chargingProfilePurpose').value;
+      const kind = document.getElementById('chargingProfileKind').value;
+      document.getElementById('purpose-hint').textContent = purposeHints[purpose] || '';
+      document.getElementById('kind-hint').textContent = kindHints[kind] || '';
+      var ssHint = document.getElementById('startSchedule-hint');
+      if (ssHint) ssHint.textContent = startScheduleHints[kind] || '';
+
+      // Update connectorId hint based on purpose
+      var cHint = document.getElementById('connectorId-hint');
+      if (purpose === 'ChargePointMaxProfile') {
+        cHint.textContent = 'Must be 0 for ChargePointMaxProfile';
+      } else if (purpose === 'TxProfile') {
+        cHint.textContent = 'Must be > 0 — specific connector with active transaction';
+      } else {
+        cHint.textContent = '0 = all connectors, 1+ = specific connector';
+      }
+
+      // Update duration hint based on kind
+      var dHint = document.getElementById('duration-hint');
+      if (kind === 'Recurring') {
+        dHint.textContent = 'How long each recurrence lasts (seconds). 86400 = 24h. If empty, fills entire cycle';
+      } else {
+        dHint.textContent = 'Schedule length in seconds. If empty, last period runs indefinitely';
+      }
+    }
+
+    // --- Conditional visibility ---
+    function updateVisibility() {
+      const purpose = document.getElementById('chargingProfilePurpose').value;
+      const kind = document.getElementById('chargingProfileKind').value;
+      toggle('recurrencyKind-group', kind === 'Recurring');
+      toggle('transactionId-group', purpose === 'TxProfile');
+      toggle('startSchedule-group', kind === 'Absolute' || kind === 'Recurring');
+      updateHints();
+    }
+
+    function toggle(id, show) {
+      document.getElementById(id).classList.toggle('hidden', !show);
+    }
+
+    // --- Auto-correct connectorId when purpose changes ---
+    document.getElementById('chargingProfilePurpose').addEventListener('change', function() {
+      const purpose = this.value;
+      const connectorInput = document.getElementById('connectorId');
+      const connectorId = parseInt(connectorInput.value);
+
+      if (purpose === 'ChargePointMaxProfile') {
+        connectorInput.value = 0;
+      } else if (purpose === 'TxProfile' && connectorId === 0) {
+        connectorInput.value = 1;
+      }
+
+      updateVisibility();
+      updateOutput();
+    });
+    document.getElementById('chargingProfileKind').addEventListener('change', function() {
+      updateVisibility();
+      updateOutput();
+    });
+
+    // --- Validation ---
+    function validate() {
+      const errors = [];
+      const purpose = document.getElementById('chargingProfilePurpose').value;
+      const connectorId = parseInt(document.getElementById('connectorId').value);
+
+      if (purpose === 'ChargePointMaxProfile' && connectorId !== 0) {
+        errors.push({ field: 'connectorId', msg: 'ChargePointMaxProfile requires connectorId = 0' });
+      }
+      if (purpose === 'TxProfile' && connectorId === 0) {
+        errors.push({ field: 'connectorId', msg: 'TxProfile requires connectorId > 0' });
+      }
+      if (purpose === 'TxProfile') {
+        const txId = document.getElementById('transactionId').value;
+        if (!txId) {
+          errors.push({ field: 'transactionId', msg: 'TxProfile requires a transactionId' });
+        }
+      }
+
+      const periodRows = document.querySelectorAll('.period-row');
+      if (periodRows.length === 0) {
+        errors.push({ field: 'periods', msg: 'At least one period is required' });
+      } else {
+        const startValues = [];
+        periodRows.forEach(function(row) {
+          startValues.push(parseStartPeriod(row.querySelector('.period-start').value));
+        });
+        startValues.sort(function(a, b) { return a - b; });
+        if (startValues[0] !== 0) {
+          errors.push({ field: 'periods', msg: 'First period must start at 0:00' });
+        }
+      }
+
+      return errors;
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.field-error').forEach(function(el) {
+        el.classList.remove('field-error');
+      });
+      document.querySelectorAll('.error-msg').forEach(function(el) {
+        el.remove();
+      });
+      const warning = document.getElementById('output-warning');
+      if (warning) warning.remove();
+    }
+
+    function showErrors(errors) {
+      if (errors.length === 0) return;
+
+      errors.forEach(function(err) {
+        if (err.field === 'connectorId') {
+          const input = document.getElementById('connectorId');
+          input.classList.add('field-error');
+          addErrorMsg(input.parentElement, err.msg);
+        } else if (err.field === 'transactionId') {
+          const input = document.getElementById('transactionId');
+          input.classList.add('field-error');
+          addErrorMsg(input.parentElement, err.msg);
+        } else if (err.field === 'periods') {
+          const container = document.getElementById('periods-container');
+          // Mark first period row if it exists
+          const firstRow = container.querySelector('.period-row');
+          if (firstRow && err.msg.indexOf('start at 0:00') !== -1) {
+            firstRow.querySelector('.period-start').classList.add('field-error');
+          }
+          addErrorMsg(container, err.msg);
+        }
+      });
+
+      // Add warning near output header
+      const outputTitle = document.querySelector('#output-panel .form-section-title');
+      const warning = document.createElement('span');
+      warning.id = 'output-warning';
+      warning.className = 'output-warning';
+      warning.textContent = errors.length + ' validation ' + (errors.length === 1 ? 'issue' : 'issues');
+      outputTitle.appendChild(warning);
+    }
+
+    function addErrorMsg(parentEl, msg) {
+      const span = document.createElement('span');
+      span.className = 'error-msg';
+      span.textContent = msg;
+      parentEl.appendChild(span);
+    }
+
+    // --- Schedule Periods ---
+    function parseStartPeriod(humanTime) {
+      const parts = humanTime.split(':');
+      const h = parseInt(parts[0]) || 0;
+      const m = parseInt(parts[1]) || 0;
+      return (h * 3600) + (m * 60);
+    }
+
+    function updatePeriodNumbers() {
+      const rows = document.querySelectorAll('.period-row');
+      rows.forEach(function(row, i) {
+        let numEl = row.querySelector('.period-number');
+        if (!numEl) {
+          numEl = document.createElement('span');
+          numEl.className = 'period-number';
+          row.insertBefore(numEl, row.firstChild);
+        }
+        numEl.textContent = '#' + (i + 1);
+      });
+    }
+
+    function addPeriod(startValue, limitValue, phasesValue) {
+      startValue = startValue !== undefined ? startValue : '0:00';
+      limitValue = limitValue !== undefined ? limitValue : 32.0;
+      phasesValue = phasesValue !== undefined ? phasesValue : '';
+
+      const container = document.getElementById('periods-container');
+      const row = document.createElement('div');
+      row.className = 'period-row';
+
+      row.innerHTML =
+        '<span class="period-number"></span>' +
+        '<div class="period-field">' +
+          '<label>Start</label>' +
+          '<input type="text" class="period-start" placeholder="0:00" value="' + startValue + '">' +
+        '</div>' +
+        '<div class="period-field">' +
+          '<label>Limit</label>' +
+          '<input type="number" class="period-limit" step="0.1" min="0" value="' + limitValue + '">' +
+        '</div>' +
+        '<div class="period-field">' +
+          '<label>Phases</label>' +
+          '<input type="number" class="period-phases" min="1" max="3" placeholder="3" value="' + phasesValue + '">' +
+        '</div>' +
+        '<button type="button" class="period-remove" title="Remove period">&times;</button>';
+
+      row.querySelector('.period-remove').addEventListener('click', function() {
+        removePeriod(row);
+      });
+
+      row.querySelectorAll('input').forEach(function(input) {
+        input.addEventListener('input', function() {
+          updateOutput();
+        });
+      });
+
+      container.appendChild(row);
+      updatePeriodNumbers();
+      updateOutput();
+    }
+
+    function removePeriod(row) {
+      row.remove();
+      updatePeriodNumbers();
+      updateOutput();
+    }
+
+    document.getElementById('add-period-btn').addEventListener('click', function() {
+      addPeriod();
+    });
+
+    // --- JSON Payload Generation ---
+    function buildPayload() {
+      const purpose = document.getElementById('chargingProfilePurpose').value;
+      const kind = document.getElementById('chargingProfileKind').value;
+
+      // Build periods array from period rows
+      const periods = [];
+      document.querySelectorAll('.period-row').forEach(function(row) {
+        const period = {
+          startPeriod: parseStartPeriod(row.querySelector('.period-start').value),
+          limit: parseFloat(row.querySelector('.period-limit').value) || 0
+        };
+        const phases = row.querySelector('.period-phases').value;
+        if (phases !== '') period.numberPhases = parseInt(phases);
+        periods.push(period);
+      });
+      periods.sort(function(a, b) { return a.startPeriod - b.startPeriod; });
+
+      const schedule = {
+        chargingRateUnit: document.getElementById('chargingRateUnit').value,
+        chargingSchedulePeriod: periods
+      };
+
+      // Optional schedule fields (startSchedule only for Absolute/Recurring)
+      if (kind === 'Absolute' || kind === 'Recurring') {
+        const startSchedule = document.getElementById('startSchedule').value;
+        if (startSchedule) schedule.startSchedule = new Date(startSchedule).toISOString();
+      }
+      const duration = document.getElementById('duration').value;
+      if (duration !== '') schedule.duration = parseInt(duration);
+      const minRate = document.getElementById('minChargingRate').value;
+      if (minRate !== '') schedule.minChargingRate = parseFloat(minRate);
+
+      const profile = {
+        chargingProfileId: parseInt(document.getElementById('chargingProfileId').value) || 0,
+        stackLevel: parseInt(document.getElementById('stackLevel').value) || 0,
+        chargingProfilePurpose: purpose,
+        chargingProfileKind: kind,
+        chargingSchedule: schedule
+      };
+
+      if (kind === 'Recurring') {
+        profile.recurrencyKind = document.getElementById('recurrencyKind').value;
+      }
+      if (purpose === 'TxProfile') {
+        const txId = document.getElementById('transactionId').value;
+        if (txId !== '') profile.transactionId = parseInt(txId);
+      }
+      const validFrom = document.getElementById('validFrom').value;
+      if (validFrom) profile.validFrom = new Date(validFrom).toISOString();
+      const validTo = document.getElementById('validTo').value;
+      if (validTo) profile.validTo = new Date(validTo).toISOString();
+
+      return {
+        connectorId: parseInt(document.getElementById('connectorId').value) || 0,
+        csChargingProfiles: profile
+      };
+    }
+
+    function updateOutput() {
+      // Clear previous validation state
+      clearErrors();
+
+      // Run validation and show errors
+      const errors = validate();
+      showErrors(errors);
+
+      const payload = buildPayload();
+      let json;
+      if (showCallFrame) {
+        const callFrame = [2, callFrameUniqueId, "SetChargingProfile", payload];
+        json = JSON.stringify(callFrame, null, 2);
+      } else {
+        json = JSON.stringify(payload, null, 2);
+      }
+      const codeEl = document.getElementById('json-output');
+      codeEl.textContent = json;
+      delete codeEl.dataset.highlighted;
+      hljs.highlightElement(codeEl);
+    }
+
+    // --- Event delegation for live updates on all form inputs ---
+    document.getElementById('profile-form').addEventListener('input', function(e) {
+      if (!e.target.closest('.period-row')) {
+        updateOutput();
+      }
+    });
+    document.getElementById('profile-form').addEventListener('change', function(e) {
+      if (!e.target.closest('.period-row')) {
+        updateOutput();
+      }
+    });
+
+    // --- Examples ---
+    var EXAMPLES = {
+      offpeak: {
+        connectorId: 0,
+        chargingProfileId: 100,
+        stackLevel: 0,
+        chargingProfilePurpose: 'TxDefaultProfile',
+        chargingProfileKind: 'Recurring',
+        recurrencyKind: 'Daily',
+        chargingRateUnit: 'A',
+        duration: 86400,
+        periods: [
+          { start: '0:00', limit: 32, phases: 3 },
+          { start: '8:00', limit: 16, phases: 3 },
+          { start: '20:00', limit: 32, phases: 3 }
+        ]
+      },
+      dcsitelimit: {
+        connectorId: 0,
+        chargingProfileId: 1,
+        stackLevel: 0,
+        chargingProfilePurpose: 'ChargePointMaxProfile',
+        chargingProfileKind: 'Absolute',
+        chargingRateUnit: 'W',
+        periods: [
+          { start: '0:00', limit: 150000, phases: '' }
+        ]
+      },
+      dcrampdown: {
+        connectorId: 1,
+        chargingProfileId: 50,
+        stackLevel: 0,
+        chargingProfilePurpose: 'TxProfile',
+        chargingProfileKind: 'Relative',
+        transactionId: 12345,
+        chargingRateUnit: 'W',
+        periods: [
+          { start: '0:00', limit: 150000, phases: '' },
+          { start: '0:20', limit: 50000, phases: '' }
+        ]
+      },
+      curtailment: {
+        connectorId: 0,
+        chargingProfileId: 999,
+        stackLevel: 99,
+        chargingProfilePurpose: 'ChargePointMaxProfile',
+        chargingProfileKind: 'Absolute',
+        chargingRateUnit: 'W',
+        periods: [
+          { start: '0:00', limit: 0, phases: '' }
+        ]
+      },
+      dctou: {
+        connectorId: 0,
+        chargingProfileId: 300,
+        stackLevel: 0,
+        chargingProfilePurpose: 'TxDefaultProfile',
+        chargingProfileKind: 'Recurring',
+        recurrencyKind: 'Daily',
+        chargingRateUnit: 'W',
+        duration: 86400,
+        periods: [
+          { start: '0:00', limit: 150000, phases: '' },
+          { start: '7:00', limit: 75000, phases: '' },
+          { start: '11:00', limit: 50000, phases: '' },
+          { start: '17:00', limit: 75000, phases: '' },
+          { start: '23:00', limit: 150000, phases: '' }
+        ]
+      },
+      weekday: {
+        connectorId: 0,
+        chargingProfileId: 200,
+        stackLevel: 0,
+        chargingProfilePurpose: 'TxDefaultProfile',
+        chargingProfileKind: 'Recurring',
+        recurrencyKind: 'Weekly',
+        chargingRateUnit: 'W',
+        duration: 604800,
+        periods: [
+          { start: '0:00', limit: 75000, phases: '' },
+          { start: '120:00', limit: 150000, phases: '' }
+        ]
+      }
+    };
+
+    function loadExample(name) {
+      var ex = EXAMPLES[name];
+      if (!ex) return;
+
+      document.getElementById('connectorId').value = ex.connectorId;
+      document.getElementById('chargingProfileId').value = ex.chargingProfileId;
+      document.getElementById('stackLevel').value = ex.stackLevel;
+      document.getElementById('chargingProfilePurpose').value = ex.chargingProfilePurpose;
+      document.getElementById('chargingProfileKind').value = ex.chargingProfileKind;
+      document.getElementById('chargingRateUnit').value = ex.chargingRateUnit;
+
+      // Clear optional fields
+      document.getElementById('startSchedule').value = '';
+      document.getElementById('validFrom').value = '';
+      document.getElementById('validTo').value = '';
+      document.getElementById('duration').value = ex.duration !== undefined ? ex.duration : '';
+      document.getElementById('minChargingRate').value = '';
+      document.getElementById('transactionId').value = ex.transactionId !== undefined ? ex.transactionId : '';
+      document.getElementById('recurrencyKind').value = ex.recurrencyKind || 'Daily';
+
+      // Clear and rebuild periods
+      document.getElementById('periods-container').innerHTML = '';
+      ex.periods.forEach(function(p) {
+        addPeriodSilent(p.start, p.limit, p.phases !== undefined ? p.phases : '');
+      });
+
+      updateVisibility();
+      updateOutput();
+      saveToStorage();
+    }
+
+    // addPeriod without triggering updateOutput (for batch loading)
+    function addPeriodSilent(startValue, limitValue, phasesValue) {
+      startValue = startValue !== undefined ? startValue : '0:00';
+      limitValue = limitValue !== undefined ? limitValue : 32.0;
+      phasesValue = phasesValue !== undefined ? phasesValue : '';
+
+      var container = document.getElementById('periods-container');
+      var row = document.createElement('div');
+      row.className = 'period-row';
+
+      row.innerHTML =
+        '<span class="period-number"></span>' +
+        '<div class="period-field">' +
+          '<label>Start</label>' +
+          '<input type="text" class="period-start" placeholder="0:00" value="' + startValue + '">' +
+        '</div>' +
+        '<div class="period-field">' +
+          '<label>Limit</label>' +
+          '<input type="number" class="period-limit" step="0.1" min="0" value="' + limitValue + '">' +
+        '</div>' +
+        '<div class="period-field">' +
+          '<label>Phases</label>' +
+          '<input type="number" class="period-phases" min="1" max="3" placeholder="3" value="' + phasesValue + '">' +
+        '</div>' +
+        '<button type="button" class="period-remove" title="Remove period">&times;</button>';
+
+      row.querySelector('.period-remove').addEventListener('click', function() {
+        removePeriod(row);
+      });
+
+      row.querySelectorAll('input').forEach(function(input) {
+        input.addEventListener('input', function() {
+          updateOutput();
+          saveToStorage();
+        });
+      });
+
+      container.appendChild(row);
+      updatePeriodNumbers();
+    }
+
+    document.querySelectorAll('.example-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        loadExample(this.dataset.example);
+      });
+    });
+
+    // --- Reset ---
+    function resetToDefaults() {
+      document.getElementById('connectorId').value = 0;
+      document.getElementById('chargingProfileId').value = 1;
+      document.getElementById('stackLevel').value = 0;
+      document.getElementById('chargingProfilePurpose').value = 'TxDefaultProfile';
+      document.getElementById('chargingProfileKind').value = 'Absolute';
+      document.getElementById('chargingRateUnit').value = 'A';
+      document.getElementById('recurrencyKind').value = 'Daily';
+      document.getElementById('transactionId').value = '';
+      document.getElementById('startSchedule').value = '';
+      document.getElementById('validFrom').value = '';
+      document.getElementById('validTo').value = '';
+      document.getElementById('duration').value = '';
+      document.getElementById('minChargingRate').value = '';
+
+      document.getElementById('periods-container').innerHTML = '';
+      addPeriodSilent('0:00', 32.0, '');
+
+      updateVisibility();
+      updateOutput();
+      saveToStorage();
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', resetToDefaults);
+
+    // --- LocalStorage persistence ---
+    var STORAGE_KEY = 'ocpp16j-profile-generator';
+
+    function getFormState() {
+      var periods = [];
+      document.querySelectorAll('.period-row').forEach(function(row) {
+        periods.push({
+          start: row.querySelector('.period-start').value,
+          limit: row.querySelector('.period-limit').value,
+          phases: row.querySelector('.period-phases').value
+        });
+      });
+
+      return {
+        connectorId: document.getElementById('connectorId').value,
+        chargingProfileId: document.getElementById('chargingProfileId').value,
+        stackLevel: document.getElementById('stackLevel').value,
+        chargingProfilePurpose: document.getElementById('chargingProfilePurpose').value,
+        chargingProfileKind: document.getElementById('chargingProfileKind').value,
+        chargingRateUnit: document.getElementById('chargingRateUnit').value,
+        recurrencyKind: document.getElementById('recurrencyKind').value,
+        transactionId: document.getElementById('transactionId').value,
+        startSchedule: document.getElementById('startSchedule').value,
+        validFrom: document.getElementById('validFrom').value,
+        validTo: document.getElementById('validTo').value,
+        duration: document.getElementById('duration').value,
+        minChargingRate: document.getElementById('minChargingRate').value,
+        periods: periods
+      };
+    }
+
+    function saveToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(getFormState()));
+      } catch (e) { /* quota exceeded or private browsing */ }
+    }
+
+    function loadFromStorage() {
+      try {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return false;
+
+        var state = JSON.parse(saved);
+
+        document.getElementById('connectorId').value = state.connectorId;
+        document.getElementById('chargingProfileId').value = state.chargingProfileId;
+        document.getElementById('stackLevel').value = state.stackLevel;
+        document.getElementById('chargingProfilePurpose').value = state.chargingProfilePurpose;
+        document.getElementById('chargingProfileKind').value = state.chargingProfileKind;
+        document.getElementById('chargingRateUnit').value = state.chargingRateUnit;
+        document.getElementById('recurrencyKind').value = state.recurrencyKind || 'Daily';
+        document.getElementById('transactionId').value = state.transactionId || '';
+        document.getElementById('startSchedule').value = state.startSchedule || '';
+        document.getElementById('validFrom').value = state.validFrom || '';
+        document.getElementById('validTo').value = state.validTo || '';
+        document.getElementById('duration').value = state.duration || '';
+        document.getElementById('minChargingRate').value = state.minChargingRate || '';
+
+        document.getElementById('periods-container').innerHTML = '';
+        if (state.periods && state.periods.length > 0) {
+          state.periods.forEach(function(p) {
+            addPeriodSilent(p.start, p.limit, p.phases);
+          });
+        } else {
+          addPeriodSilent('0:00', 32.0, '');
+        }
+
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function clearStorage() {
+      localStorage.removeItem(STORAGE_KEY);
+      resetToDefaults();
+    }
+
+    document.getElementById('btn-clear-storage').addEventListener('click', clearStorage);
+
+    // Hook saveToStorage into all input events
+    var originalUpdateOutput = updateOutput;
+    updateOutput = function() {
+      originalUpdateOutput();
+      saveToStorage();
+    };
+
+    // --- Initialize ---
+    var loaded = loadFromStorage();
+    if (!loaded) {
+      addPeriodSilent('0:00', 32.0, '');
+    }
+    updateVisibility();
+    updateOutput();
+  </script>
+</body>
+</html>

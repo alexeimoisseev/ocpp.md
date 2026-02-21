@@ -73,6 +73,12 @@ STATIC_FILES = [
     "_headers",
 ]
 
+# Standalone HTML tools: (source_file, output_dir)
+# Each is copied as index.html into its output directory for clean URLs
+STANDALONE_PAGES = [
+    ("html/ocpp-1.6j-charging-profile-generator.html", "ocpp-1.6j/smart-charging/generator"),
+]
+
 # Index page TOC — short labels for the landing page sticky nav
 INDEX_TOC = [
     ("why-this-exists", "Why"),
@@ -1145,6 +1151,15 @@ def copy_static_files():
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
             print(f"  [static] {f}")
+
+    # Standalone HTML pages (tools, generators)
+    for src_file, out_dir in STANDALONE_PAGES:
+        src = ROOT / src_file
+        if src.exists():
+            dst = OUTPUT_DIR / out_dir / "index.html"
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+            print(f"  [standalone] {src_file} -> {out_dir}/")
 
     # Raw .md copies (keep original names and directory structure)
     for source_rel, _url_path in CONTENT_FILES:

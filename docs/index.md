@@ -62,6 +62,7 @@ The current specification, recommended for all new deployments. 64 messages orga
 - [Smart Charging Deep-Dive](./ocpp-2.0.1/smart-charging/) — Profile model, composite schedules, AC/DC differences
 - [Smart Charging Examples](./ocpp-2.0.1/smart-charging/examples/) — Worked examples with full JSON payloads
 - [Smart Charging & ISO 15118](./ocpp-2.0.1/smart-charging/iso15118/) — EV-side schedules, Plug & Charge integration
+- [Charging Profile Generator](./ocpp-2.0.1/smart-charging/generator/) — Interactive tool to build SetChargingProfileRequest payloads
 
 ---
 

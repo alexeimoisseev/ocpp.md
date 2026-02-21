@@ -77,6 +77,7 @@ STATIC_FILES = [
 # Each is copied as index.html into its output directory for clean URLs
 STANDALONE_PAGES = [
     ("html/ocpp-1.6j-charging-profile-generator.html", "ocpp-1.6j/smart-charging/generator"),
+    ("html/ocpp-2.0.1-charging-profile-generator.html", "ocpp-2.0.1/smart-charging/generator"),
 ]
 
 # Index page TOC — short labels for the landing page sticky nav

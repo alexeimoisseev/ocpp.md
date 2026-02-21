@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCPP 2.0.1 Charging Profile Generator</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Highlight.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --text: #1a1a1a;
+      --text-muted: #6b6b6b;
+      --accent: #2d6a4f;
+      --accent-hover: #1b4332;
+      --border: #d4d0c8;
+      --input-bg: #ffffff;
+      --code-bg: #1e1e1c;
+      --font-serif: 'Source Serif 4', Georgia, serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+      --radius: 4px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-serif);
+      font-size: 17px;
+      line-height: 1.72;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .page-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    /* --- Header --- */
+    .page-header {
+      border-bottom: 1px solid var(--border);
+      padding: 3rem 0 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .page-header h1 {
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .page-header .subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.01em;
+    }
+
+    /* --- Form --- */
+    #profile-form {
+      margin-bottom: 3rem;
+    }
+
+    .form-section {
+      margin-bottom: 2rem;
+    }
+
+    .form-section-title {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0.25rem;
+    }
+
+    .form-group label {
+      font-family: var(--font-serif);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+
+    .form-group .helper {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    .form-group .hint {
+      font-family: var(--font-mono);
+      font-size: 0.73rem;
+      color: var(--accent);
+      margin-top: 0.25rem;
+      line-height: 1.45;
+    }
+
+    label .required {
+      color: #c0392b;
+      margin-left: 2px;
+    }
+
+    .form-group input,
+    .form-group select {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--input-bg);
+      color: var(--text);
+      transition: border-color 0.15s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.12);
+    }
+
+    .form-group select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6b6b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    /* --- Buttons --- */
+    .btn {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 8px 18px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* --- Hidden utility --- */
+    .hidden {
+      display: none !important;
+    }
+
+    /* --- Output panel --- */
+    #output-panel {
+      margin-top: 2rem;
+    }
+
+    /* --- Schedule tabs --- */
+    .schedule-tabs-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .schedule-tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .schedule-tab {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .schedule-tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .schedule-tab:not(.active):hover {
+      background: rgba(45, 106, 79, 0.08);
+    }
+
+    .tab-text {
+      pointer-events: none;
+    }
+
+    .tab-remove {
+      font-size: 0.95rem;
+      line-height: 1;
+      color: var(--text-muted);
+      opacity: 0.5;
+      transition: opacity 0.15s ease, color 0.15s ease;
+      cursor: pointer;
+    }
+
+    .tab-remove:hover {
+      color: #c0392b;
+      opacity: 1;
+    }
+
+    .schedule-tab.active .tab-remove {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .schedule-tab.active .tab-remove:hover {
+      color: #fff;
+    }
+
+    #add-schedule-btn {
+      font-size: 0.78rem;
+      padding: 5px 12px;
+    }
+
+    /* --- Schedule panel --- */
+    .schedule-panel {
+      display: none;
+      padding: 1.25rem;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 0.5rem;
+    }
+
+    .schedule-panel.active {
+      display: block;
+    }
+
+    .schedule-panel .form-row {
+      margin-bottom: 0.75rem;
+    }
+
+    .schedule-panel .periods-title {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin: 1.25rem 0 0.75rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* --- Periods section --- */
+    .period-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+    }
+
+    .period-field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .period-field label {
+      font-family: var(--font-serif);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .period-field input {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--input-bg);
+      color: var(--text);
+      transition: border-color 0.15s ease;
+    }
+
+    .period-field input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.12);
+    }
+
+    .period-field .period-start { width: 80px; }
+    .period-field .period-limit { width: 100px; }
+    .period-field .period-phases { width: 60px; }
+    .period-field .period-phase { width: 60px; }
+
+    .period-remove {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 4px 8px;
+      border: none;
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .period-remove:hover {
+      color: #c0392b;
+      background: rgba(192, 57, 43, 0.08);
+    }
+
+    /* --- Period numbering --- */
+    .period-number {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      min-width: 22px;
+      align-self: center;
+    }
+
+    /* --- Output panel header --- */
+    .output-header {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .output-toggle {
+      display: flex;
+    }
+
+    .toggle-btn {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 6px 16px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .toggle-btn:first-child {
+      border-radius: 20px 0 0 20px;
+      border-right: none;
+    }
+
+    .toggle-btn:last-child {
+      border-radius: 0 20px 20px 0;
+    }
+
+    .toggle-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .toggle-btn:not(.active):hover {
+      background: rgba(45, 106, 79, 0.08);
+    }
+
+    .btn-copy {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 5px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    }
+
+    .btn-copy:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(45, 106, 79, 0.06);
+    }
+
+    /* --- JSON output --- */
+    #output-panel pre {
+      background: var(--code-bg);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      overflow-x: auto;
+    }
+
+    #output-panel pre code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    /* --- Validation --- */
+    .field-error {
+      border-color: #c0392b !important;
+      box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.12) !important;
+    }
+
+    .error-msg {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #c0392b;
+      margin-top: 0.2rem;
+    }
+
+    .output-warning {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #c0392b;
+      margin-left: 0.75rem;
+    }
+
+    .output-warning::before {
+      content: '\26A0';
+      font-size: 0.95rem;
+    }
+
+    /* --- Examples --- */
+    .examples-section {
+      margin-bottom: 2.5rem;
+    }
+
+    .examples-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .example-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      background: var(--input-bg);
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .example-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.1);
+    }
+
+    .example-card .example-name {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+
+    .example-card .example-desc {
+      font-family: var(--font-serif);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-small {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-small:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .page-wrapper {
+        padding: 0 1rem 3rem;
+      }
+
+      .page-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .period-row {
+        flex-wrap: wrap;
+      }
+
+      .period-field {
+        flex: 1 1 auto;
+        min-width: 70px;
+      }
+
+      .period-field .period-start,
+      .period-field .period-limit,
+      .period-field .period-phases,
+      .period-field .period-phase {
+        width: 100%;
+      }
+
+      #output-panel pre {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .output-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .examples-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .schedule-tabs-bar {
+        flex-wrap: wrap;
+      }
+
+      .schedule-panel {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <header class="page-header">
+      <h1>OCPP 2.0.1 Charging Profile Generator</h1>
+      <p class="subtitle">Build SetChargingProfileRequest payloads</p>
+    </header>
+
+    <div class="examples-section">
+      <h2 class="form-section-title">Examples</h2>
+      <div class="examples-grid">
+        <div class="example-card" data-example="dcsitelimit">
+          <div class="example-name">DC Site Power Limit</div>
+          <div class="example-desc">Cap the entire Charging Station to 150 kW (ChargingStationMaxProfile)</div>
+        </div>
+        <div class="example-card" data-example="gridconstraint">
+          <div class="example-name">Grid Operator Constraint</div>
+          <div class="example-desc">External grid limits: 100 kW off-peak, 50 kW midday (ChargingStationExternalConstraints)</div>
+        </div>
+        <div class="example-card" data-example="offpeakac">
+          <div class="example-name">Off-Peak AC</div>
+          <div class="example-desc">Daily recurring: 32A at night, 16A during peak hours (TxDefaultProfile)</div>
+        </div>
+        <div class="example-card" data-example="dcrampdown">
+          <div class="example-name">DC Ramp Down</div>
+          <div class="example-desc">Start at 150 kW, step down to 50 kW after 20 min (TxProfile, Relative)</div>
+        </div>
+        <div class="example-card" data-example="curtailment">
+          <div class="example-name">Emergency Curtailment</div>
+          <div class="example-desc">Stop all charging immediately with a high-priority override (stackLevel 99, limit 0)</div>
+        </div>
+        <div class="example-card" data-example="dualschedule">
+          <div class="example-name">Dual-Schedule Profile</div>
+          <div class="example-desc">Two schedules on one profile: one in Amps, one in Watts (multi-schedule feature)</div>
+        </div>
+      </div>
+    </div>
+
+    <form id="profile-form">
+      <div class="form-actions">
+        <button type="button" class="btn-small" id="btn-reset">Reset to defaults</button>
+        <button type="button" class="btn-small" id="btn-clear-storage">Clear saved data</button>
+      </div>
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.5rem;"><span class="required">*</span> Required field</p>
+
+      <!-- Group 1: Target -->
+      <div class="form-section">
+        <h2 class="form-section-title">Target</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="evseId">EVSE ID <span class="required">*</span></label>
+            <input type="number" id="evseId" value="0" min="0">
+            <span class="hint" id="evseId-hint">0 = entire Charging Station, 1+ = specific EVSE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 2: Profile Metadata -->
+      <div class="form-section">
+        <h2 class="form-section-title">Profile</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="profileId">Profile ID <span class="required">*</span></label>
+            <input type="number" id="profileId" value="1" min="0">
+            <span class="hint">Unique identifier for this charging profile</span>
+          </div>
+          <div class="form-group">
+            <label for="stackLevel">Stack Level <span class="required">*</span></label>
+            <input type="number" id="stackLevel" value="0" min="0">
+            <span class="hint">Higher levels override lower. Same level + purpose = replacement</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="chargingProfilePurpose">Purpose <span class="required">*</span></label>
+            <select id="chargingProfilePurpose">
+              <option value="ChargingStationMaxProfile">ChargingStationMaxProfile</option>
+              <option value="ChargingStationExternalConstraints">ChargingStationExternalConstraints</option>
+              <option value="TxDefaultProfile" selected>TxDefaultProfile</option>
+              <option value="TxProfile">TxProfile</option>
+            </select>
+            <span class="hint" id="purpose-hint"></span>
+          </div>
+          <div class="form-group">
+            <label for="chargingProfileKind">Kind <span class="required">*</span></label>
+            <select id="chargingProfileKind">
+              <option value="Absolute" selected>Absolute</option>
+              <option value="Recurring">Recurring</option>
+              <option value="Relative">Relative</option>
+            </select>
+            <span class="hint" id="kind-hint"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conditional Fields -->
+      <div class="form-section">
+        <h2 class="form-section-title">Conditional &amp; Optional Fields</h2>
+
+        <!-- Recurrency Kind: shown when Kind = Recurring -->
+        <div id="recurrencyKind-group" class="form-row hidden">
+          <div class="form-group">
+            <label for="recurrencyKind">Recurrency Kind <span class="required">*</span></label>
+            <select id="recurrencyKind">
+              <option value="Daily">Daily</option>
+              <option value="Weekly">Weekly</option>
+            </select>
+            <span class="hint">Daily = repeats every 24h, Weekly = every 168h</span>
+          </div>
+        </div>
+
+        <!-- Transaction ID: shown when Purpose = TxProfile -->
+        <div id="transactionId-group" class="form-row hidden">
+          <div class="form-group">
+            <label for="transactionId">Transaction ID <span class="required">*</span></label>
+            <input type="text" id="transactionId" maxlength="36" placeholder="e.g. tx-abc12345-def">
+            <span class="hint">String (max 36 chars). Must match the active transaction on this EVSE</span>
+          </div>
+        </div>
+
+        <!-- Always-visible optional fields -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="validFrom">Valid From</label>
+            <input type="datetime-local" id="validFrom">
+            <span class="hint">Profile is not active before this time</span>
+          </div>
+          <div class="form-group">
+            <label for="validTo">Valid To</label>
+            <input type="datetime-local" id="validTo">
+            <span class="hint">Profile expires after this time</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charging Schedules (dynamic tabs + panels) -->
+      <div class="form-section">
+        <h2 class="form-section-title">Charging Schedules</h2>
+        <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">OCPP 2.0.1 allows 1&ndash;3 schedules per profile. Each schedule can use a different rate unit.</p>
+        <div class="schedule-tabs-bar">
+          <div class="schedule-tabs" id="schedule-tabs"></div>
+          <button type="button" class="btn btn-outline" id="add-schedule-btn" style="font-size: 0.78rem; padding: 5px 12px;">+ Schedule</button>
+        </div>
+        <div id="schedule-panels"></div>
+      </div>
+
+    </form>
+
+    <div id="output-panel">
+      <h2 class="form-section-title">Output</h2>
+      <div class="output-header">
+        <div class="output-toggle">
+          <button type="button" id="btn-payload" class="toggle-btn active">Payload</button>
+          <button type="button" id="btn-call-frame" class="toggle-btn">CALL Frame</button>
+        </div>
+        <button type="button" id="btn-copy" class="btn-copy" title="Copy to clipboard">Copy</button>
+      </div>
+      <pre><code id="json-output" class="language-json"></code></pre>
+    </div>
+  </div>
+
+  <script>
+    // --- Prevent form submission ---
+    document.getElementById('profile-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+    });
+
+    // =========================================================================
+    // Schedule management
+    // =========================================================================
+    var schedDomCounter = 0;
+    var activeIdx = null;
+
+    function getSchedulePanelHTML(defaultId) {
+      return '' +
+        '<div class="form-row">' +
+          '<div class="form-group">' +
+            '<label>Schedule ID <span class="required">*</span></label>' +
+            '<input type="number" class="sched-id" value="' + defaultId + '" min="0">' +
+            '<span class="hint">Unique identifier for this schedule within the profile</span>' +
+          '</div>' +
+          '<div class="form-group">' +
+            '<label>Charging Rate Unit <span class="required">*</span></label>' +
+            '<select class="sched-rate-unit">' +
+              '<option value="W">W (Watts)</option>' +
+              '<option value="A">A (Amps)</option>' +
+            '</select>' +
+            '<span class="hint">Check ChargingScheduleAllowedChargingRateUnit on your CS</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="form-row sched-start-group">' +
+          '<div class="form-group">' +
+            '<label>Start Schedule</label>' +
+            '<input type="datetime-local" class="sched-start">' +
+            '<span class="hint sched-start-hint"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="form-row">' +
+          '<div class="form-group">' +
+            '<label>Duration</label>' +
+            '<input type="number" class="sched-duration" min="0">' +
+            '<span class="hint sched-duration-hint">Schedule length in seconds. If empty, last period runs indefinitely</span>' +
+          '</div>' +
+          '<div class="form-group">' +
+            '<label>Min Charging Rate</label>' +
+            '<input type="number" class="sched-min-rate" step="0.1" min="0">' +
+            '<span class="hint">Informational hint for load balancing, not a hard floor</span>' +
+          '</div>' +
+        '</div>' +
+        '<h3 class="periods-title">Periods</h3>' +
+        '<div class="periods-container"></div>' +
+        '<button type="button" class="btn btn-outline add-period-btn">+ Add Period</button>';
+    }
+
+    function createSchedulePanel(defaultId) {
+      schedDomCounter++;
+      var idx = schedDomCounter;
+      defaultId = (defaultId !== undefined && defaultId !== null) ? defaultId : idx;
+
+      // Create tab
+      var tabsEl = document.getElementById('schedule-tabs');
+      var tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'schedule-tab';
+      tab.setAttribute('data-idx', idx);
+
+      var tabText = document.createElement('span');
+      tabText.className = 'tab-text';
+      tabText.textContent = 'Schedule ' + idx;
+      tab.appendChild(tabText);
+
+      var removeBtn = document.createElement('span');
+      removeBtn.className = 'tab-remove';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.title = 'Remove schedule';
+      tab.appendChild(removeBtn);
+
+      tab.addEventListener('click', function(e) {
+        if (e.target.classList.contains('tab-remove')) return;
+        switchSchedule(idx);
+      });
+      removeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        removeSchedule(idx);
+      });
+
+      tabsEl.appendChild(tab);
+
+      // Create panel
+      var panelsEl = document.getElementById('schedule-panels');
+      var panel = document.createElement('div');
+      panel.className = 'schedule-panel';
+      panel.setAttribute('data-idx', idx);
+      panel.innerHTML = getSchedulePanelHTML(defaultId);
+
+      // Wire add-period button
+      panel.querySelector('.add-period-btn').addEventListener('click', function() {
+        addPeriod(panel);
+      });
+
+      // Wire input/change events for live updates
+      panel.querySelectorAll('input, select').forEach(function(el) {
+        el.addEventListener('input', function() { updateOutput(); });
+        el.addEventListener('change', function() { updateOutput(); });
+      });
+
+      panelsEl.appendChild(panel);
+
+      // Switch to new tab
+      switchSchedule(idx);
+      renumberTabs();
+      updateTabRemoveButtons();
+      updateAddScheduleBtn();
+      updateScheduleVisibility();
+
+      return idx;
+    }
+
+    function removeSchedule(idx) {
+      var tabs = document.querySelectorAll('.schedule-tab');
+      if (tabs.length <= 1) return;
+
+      var tab = document.querySelector('.schedule-tab[data-idx="' + idx + '"]');
+      var panel = document.querySelector('.schedule-panel[data-idx="' + idx + '"]');
+      var wasActive = tab.classList.contains('active');
+
+      tab.remove();
+      panel.remove();
+
+      if (wasActive) {
+        var firstTab = document.querySelector('.schedule-tab');
+        if (firstTab) {
+          switchSchedule(parseInt(firstTab.getAttribute('data-idx')));
+        }
+      }
+
+      renumberTabs();
+      updateTabRemoveButtons();
+      updateAddScheduleBtn();
+      updateOutput();
+    }
+
+    function switchSchedule(idx) {
+      activeIdx = idx;
+      document.querySelectorAll('.schedule-tab').forEach(function(tab) {
+        tab.classList.toggle('active', parseInt(tab.getAttribute('data-idx')) === idx);
+      });
+      document.querySelectorAll('.schedule-panel').forEach(function(panel) {
+        panel.classList.toggle('active', parseInt(panel.getAttribute('data-idx')) === idx);
+      });
+    }
+
+    function renumberTabs() {
+      var tabs = document.querySelectorAll('.schedule-tab');
+      tabs.forEach(function(tab, i) {
+        tab.querySelector('.tab-text').textContent = 'Schedule ' + (i + 1);
+      });
+    }
+
+    function updateTabRemoveButtons() {
+      var tabs = document.querySelectorAll('.schedule-tab');
+      tabs.forEach(function(tab) {
+        var btn = tab.querySelector('.tab-remove');
+        if (btn) btn.classList.toggle('hidden', tabs.length <= 1);
+      });
+    }
+
+    function updateAddScheduleBtn() {
+      var count = document.querySelectorAll('.schedule-tab').length;
+      document.getElementById('add-schedule-btn').classList.toggle('hidden', count >= 3);
+    }
+
+    document.getElementById('add-schedule-btn').addEventListener('click', function() {
+      var count = document.querySelectorAll('.schedule-tab').length;
+      if (count >= 3) return;
+      var nextId = count + 1;
+      // Find the max schedule ID currently used and increment
+      document.querySelectorAll('.schedule-panel .sched-id').forEach(function(el) {
+        var v = parseInt(el.value) || 0;
+        if (v >= nextId) nextId = v + 1;
+      });
+      var idx = createSchedulePanel(nextId);
+      addPeriodSilent(document.querySelector('.schedule-panel[data-idx="' + idx + '"]'));
+      updateOutput();
+    });
+
+    // Update startSchedule visibility in all schedule panels based on kind
+    function updateScheduleVisibility() {
+      var kind = document.getElementById('chargingProfileKind').value;
+      var showStart = (kind === 'Absolute' || kind === 'Recurring');
+      document.querySelectorAll('.sched-start-group').forEach(function(el) {
+        el.classList.toggle('hidden', !showStart);
+      });
+    }
+
+    // =========================================================================
+    // Period management
+    // =========================================================================
+    function parseStartPeriod(humanTime) {
+      var parts = humanTime.split(':');
+      var h = parseInt(parts[0]) || 0;
+      var m = parseInt(parts[1]) || 0;
+      return (h * 3600) + (m * 60);
+    }
+
+    function updatePeriodNumbers(panel) {
+      var rows = panel.querySelectorAll('.period-row');
+      rows.forEach(function(row, i) {
+        var numEl = row.querySelector('.period-number');
+        if (!numEl) {
+          numEl = document.createElement('span');
+          numEl.className = 'period-number';
+          row.insertBefore(numEl, row.firstChild);
+        }
+        numEl.textContent = '#' + (i + 1);
+      });
+    }
+
+    function createPeriodRow(panel, startValue, limitValue, phasesValue, phaseToUseValue, silent) {
+      startValue = startValue !== undefined ? startValue : '0:00';
+      if (limitValue === undefined) {
+        var rateUnit = panel.querySelector('.sched-rate-unit').value;
+        limitValue = (rateUnit === 'W') ? 11000 : 32;
+      }
+      phasesValue = phasesValue !== undefined ? phasesValue : '';
+      phaseToUseValue = phaseToUseValue !== undefined ? phaseToUseValue : '';
+
+      var container = panel.querySelector('.periods-container');
+      var row = document.createElement('div');
+      row.className = 'period-row';
+
+      var phaseFieldHidden = (phasesValue !== '' && parseInt(phasesValue) === 1) ? '' : ' hidden';
+
+      row.innerHTML =
+        '<span class="period-number"></span>' +
+        '<div class="period-field">' +
+          '<label>Start</label>' +
+          '<input type="text" class="period-start" placeholder="0:00" value="' + startValue + '">' +
+        '</div>' +
+        '<div class="period-field">' +
+          '<label>Limit</label>' +
+          '<input type="number" class="period-limit" step="0.1" min="0" value="' + limitValue + '">' +
+        '</div>' +
+        '<div class="period-field">' +
+          '<label>Phases</label>' +
+          '<input type="number" class="period-phases" min="1" max="3" placeholder="3" value="' + phasesValue + '">' +
+        '</div>' +
+        '<div class="period-field period-phase-field' + phaseFieldHidden + '">' +
+          '<label>Phase</label>' +
+          '<input type="number" class="period-phase" min="1" max="3" placeholder="\u2014" value="' + phaseToUseValue + '">' +
+        '</div>' +
+        '<button type="button" class="period-remove" title="Remove period">&times;</button>';
+
+      // Wire remove button
+      row.querySelector('.period-remove').addEventListener('click', function() {
+        row.remove();
+        updatePeriodNumbers(panel);
+        updateOutput();
+      });
+
+      // Wire phases -> phaseToUse visibility
+      row.querySelector('.period-phases').addEventListener('input', function() {
+        var phaseField = row.querySelector('.period-phase-field');
+        if (this.value === '1') {
+          phaseField.classList.remove('hidden');
+        } else {
+          phaseField.classList.add('hidden');
+          row.querySelector('.period-phase').value = '';
+        }
+      });
+
+      // Wire input events
+      row.querySelectorAll('input').forEach(function(input) {
+        input.addEventListener('input', function() {
+          updateOutput();
+        });
+      });
+
+      container.appendChild(row);
+      updatePeriodNumbers(panel);
+
+      if (!silent) updateOutput();
+    }
+
+    function addPeriod(panel, startValue, limitValue, phasesValue, phaseToUseValue) {
+      createPeriodRow(panel, startValue, limitValue, phasesValue, phaseToUseValue, false);
+    }
+
+    function addPeriodSilent(panel, startValue, limitValue, phasesValue, phaseToUseValue) {
+      createPeriodRow(panel, startValue, limitValue, phasesValue, phaseToUseValue, true);
+    }
+
+    // =========================================================================
+    // OCPP-J CALL frame toggle
+    // =========================================================================
+    var showCallFrame = false;
+    function generateUniqueId() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID().slice(0, 8);
+      }
+      return Math.random().toString(36).slice(2, 10);
+    }
+    var callFrameUniqueId = generateUniqueId();
+
+    document.getElementById('btn-call-frame').addEventListener('click', function() {
+      if (showCallFrame) return;
+      showCallFrame = true;
+      callFrameUniqueId = generateUniqueId();
+      updateToggleButtons();
+      updateOutput();
+    });
+
+    document.getElementById('btn-payload').addEventListener('click', function() {
+      if (!showCallFrame) return;
+      showCallFrame = false;
+      updateToggleButtons();
+      updateOutput();
+    });
+
+    function updateToggleButtons() {
+      document.getElementById('btn-payload').classList.toggle('active', !showCallFrame);
+      document.getElementById('btn-call-frame').classList.toggle('active', showCallFrame);
+    }
+
+    // =========================================================================
+    // Copy to clipboard
+    // =========================================================================
+    document.getElementById('btn-copy').addEventListener('click', function() {
+      var text = document.getElementById('json-output').textContent;
+      navigator.clipboard.writeText(text).then(function() {
+        var btn = document.getElementById('btn-copy');
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+      });
+    });
+
+    // =========================================================================
+    // Contextual hints
+    // =========================================================================
+    var purposeHints = {
+      ChargingStationMaxProfile: 'Max power for the entire Charging Station. evseId=0 for station-wide',
+      ChargingStationExternalConstraints: 'Grid operator / external limits sent via CSMS. evseId=0 for station-wide',
+      TxDefaultProfile: 'Default schedule for new transactions. evseId=0 applies to each EVSE individually',
+      TxProfile: 'Applies only to a specific active transaction. Requires evseId > 0 and transactionId'
+    };
+
+    var kindHints = {
+      Absolute: 'Periods are offsets from a fixed date/time (startSchedule)',
+      Recurring: 'Schedule repeats on a daily or weekly cycle from startSchedule',
+      Relative: 'Periods are offsets from the start of the transaction. No startSchedule needed'
+    };
+
+    var startScheduleHints = {
+      Absolute: 'Anchor date/time for the schedule. If empty, starts at validFrom or now',
+      Recurring: 'Anchors the recurrence cycle. Only the time-of-day matters for Daily'
+    };
+
+    function updateHints() {
+      var purpose = document.getElementById('chargingProfilePurpose').value;
+      var kind = document.getElementById('chargingProfileKind').value;
+      document.getElementById('purpose-hint').textContent = purposeHints[purpose] || '';
+      document.getElementById('kind-hint').textContent = kindHints[kind] || '';
+
+      // Update startSchedule hints in all schedule panels
+      document.querySelectorAll('.sched-start-hint').forEach(function(el) {
+        el.textContent = startScheduleHints[kind] || '';
+      });
+
+      // Update evseId hint based on purpose
+      var eHint = document.getElementById('evseId-hint');
+      if (purpose === 'ChargingStationMaxProfile' || purpose === 'ChargingStationExternalConstraints') {
+        eHint.textContent = '0 = station-wide limit, 1+ = specific EVSE';
+      } else if (purpose === 'TxProfile') {
+        eHint.textContent = 'Must be > 0 \u2014 specific EVSE with active transaction';
+      } else {
+        eHint.textContent = '0 = applies to each EVSE individually, 1+ = specific EVSE';
+      }
+
+      // Update duration hints in all schedule panels based on kind
+      var durationText = (kind === 'Recurring')
+        ? 'How long each recurrence lasts (seconds). 86400 = 24h. If empty, fills entire cycle'
+        : 'Schedule length in seconds. If empty, last period runs indefinitely';
+      document.querySelectorAll('.sched-duration-hint').forEach(function(el) {
+        el.textContent = durationText;
+      });
+    }
+
+    // =========================================================================
+    // Conditional visibility
+    // =========================================================================
+    function updateVisibility() {
+      var purpose = document.getElementById('chargingProfilePurpose').value;
+      var kind = document.getElementById('chargingProfileKind').value;
+      toggle('recurrencyKind-group', kind === 'Recurring');
+      toggle('transactionId-group', purpose === 'TxProfile');
+      updateScheduleVisibility();
+      updateHints();
+    }
+
+    function toggle(id, show) {
+      document.getElementById(id).classList.toggle('hidden', !show);
+    }
+
+    // --- Auto-correct evseId when purpose changes ---
+    document.getElementById('chargingProfilePurpose').addEventListener('change', function() {
+      var purpose = this.value;
+      var evseInput = document.getElementById('evseId');
+      var evseId = parseInt(evseInput.value);
+
+      if (purpose === 'TxProfile' && evseId === 0) {
+        evseInput.value = 1;
+      }
+
+      updateVisibility();
+      updateOutput();
+    });
+
+    document.getElementById('chargingProfileKind').addEventListener('change', function() {
+      updateVisibility();
+      updateOutput();
+    });
+
+    // =========================================================================
+    // Validation
+    // =========================================================================
+    function validate() {
+      var errors = [];
+      var purpose = document.getElementById('chargingProfilePurpose').value;
+      var evseId = parseInt(document.getElementById('evseId').value);
+
+      if (purpose === 'TxProfile' && evseId === 0) {
+        errors.push({ field: 'evseId', msg: 'TxProfile requires evseId > 0' });
+      }
+      if (purpose === 'TxProfile') {
+        var txId = document.getElementById('transactionId').value;
+        if (!txId) {
+          errors.push({ field: 'transactionId', msg: 'TxProfile requires a transactionId' });
+        }
+      }
+
+      // Validate each schedule
+      var panels = document.querySelectorAll('.schedule-panel');
+      if (panels.length === 0) {
+        errors.push({ field: 'schedules', msg: 'At least one schedule is required' });
+      }
+      panels.forEach(function(panel, idx) {
+        var periodRows = panel.querySelectorAll('.period-row');
+        if (periodRows.length === 0) {
+          errors.push({ field: 'periods', schedIdx: idx, msg: 'Schedule ' + (idx + 1) + ': at least one period is required' });
+        } else {
+          var startValues = [];
+          periodRows.forEach(function(row) {
+            startValues.push(parseStartPeriod(row.querySelector('.period-start').value));
+          });
+          startValues.sort(function(a, b) { return a - b; });
+          if (startValues[0] !== 0) {
+            errors.push({ field: 'periods', schedIdx: idx, msg: 'Schedule ' + (idx + 1) + ': first period must start at 0:00' });
+          }
+        }
+      });
+
+      // Check for duplicate schedule IDs (outside per-panel loop)
+      if (panels.length > 1) {
+        var schedIds = [];
+        panels.forEach(function(panel) {
+          schedIds.push(parseInt(panel.querySelector('.sched-id').value) || 0);
+        });
+        var seen = {};
+        schedIds.forEach(function(id, i) {
+          if (seen[id] !== undefined) {
+            errors.push({ field: 'schedId', schedIdx: i, msg: 'Schedule ' + (i + 1) + ': duplicate schedule ID ' + id });
+          }
+          seen[id] = i;
+        });
+      }
+
+      return errors;
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.field-error').forEach(function(el) {
+        el.classList.remove('field-error');
+      });
+      document.querySelectorAll('.error-msg').forEach(function(el) {
+        el.remove();
+      });
+      var warning = document.getElementById('output-warning');
+      if (warning) warning.remove();
+    }
+
+    function showErrors(errors) {
+      if (errors.length === 0) return;
+
+      // Deduplicate
+      var seen = {};
+      var unique = [];
+      errors.forEach(function(err) {
+        var key = err.field + ':' + (err.schedIdx !== undefined ? err.schedIdx : '') + ':' + err.msg;
+        if (!seen[key]) {
+          seen[key] = true;
+          unique.push(err);
+        }
+      });
+
+      unique.forEach(function(err) {
+        if (err.field === 'evseId') {
+          var input = document.getElementById('evseId');
+          input.classList.add('field-error');
+          addErrorMsg(input.parentElement, err.msg);
+        } else if (err.field === 'transactionId') {
+          var input = document.getElementById('transactionId');
+          input.classList.add('field-error');
+          addErrorMsg(input.parentElement, err.msg);
+        } else if (err.field === 'periods') {
+          var panels = document.querySelectorAll('.schedule-panel');
+          if (panels[err.schedIdx]) {
+            var container = panels[err.schedIdx].querySelector('.periods-container');
+            if (err.msg.indexOf('start at 0:00') !== -1) {
+              var firstRow = container.querySelector('.period-row');
+              if (firstRow) firstRow.querySelector('.period-start').classList.add('field-error');
+            }
+            addErrorMsg(container, err.msg);
+          }
+        } else if (err.field === 'schedId') {
+          var panels = document.querySelectorAll('.schedule-panel');
+          if (panels[err.schedIdx]) {
+            var idInput = panels[err.schedIdx].querySelector('.sched-id');
+            idInput.classList.add('field-error');
+            addErrorMsg(idInput.parentElement, err.msg);
+          }
+        }
+      });
+
+      // Add warning near output header
+      var outputTitle = document.querySelector('#output-panel .form-section-title');
+      var warning = document.createElement('span');
+      warning.id = 'output-warning';
+      warning.className = 'output-warning';
+      warning.textContent = unique.length + ' validation ' + (unique.length === 1 ? 'issue' : 'issues');
+      outputTitle.appendChild(warning);
+    }
+
+    function addErrorMsg(parentEl, msg) {
+      var span = document.createElement('span');
+      span.className = 'error-msg';
+      span.textContent = msg;
+      parentEl.appendChild(span);
+    }
+
+    // =========================================================================
+    // JSON payload generation
+    // =========================================================================
+    function buildPayload() {
+      var kind = document.getElementById('chargingProfileKind').value;
+      var purpose = document.getElementById('chargingProfilePurpose').value;
+
+      // Build schedules array
+      var schedules = [];
+      document.querySelectorAll('.schedule-panel').forEach(function(panel) {
+        var periods = [];
+        panel.querySelectorAll('.period-row').forEach(function(row) {
+          var period = {
+            startPeriod: parseStartPeriod(row.querySelector('.period-start').value),
+            limit: parseFloat(row.querySelector('.period-limit').value) || 0
+          };
+          // Round limit to one decimal place
+          period.limit = Math.round(period.limit * 10) / 10;
+
+          var phases = row.querySelector('.period-phases').value;
+          if (phases !== '') period.numberPhases = parseInt(phases);
+
+          // phaseToUse: only when numberPhases=1
+          if (parseInt(phases) === 1) {
+            var phaseToUse = row.querySelector('.period-phase').value;
+            if (phaseToUse !== '') period.phaseToUse = parseInt(phaseToUse);
+          }
+
+          periods.push(period);
+        });
+        periods.sort(function(a, b) { return a.startPeriod - b.startPeriod; });
+
+        var schedule = {
+          id: parseInt(panel.querySelector('.sched-id').value) || 0,
+          chargingRateUnit: panel.querySelector('.sched-rate-unit').value,
+          chargingSchedulePeriod: periods
+        };
+
+        // Optional schedule fields
+        if (kind === 'Absolute' || kind === 'Recurring') {
+          var startSched = panel.querySelector('.sched-start').value;
+          if (startSched) schedule.startSchedule = new Date(startSched).toISOString();
+        }
+        var dur = panel.querySelector('.sched-duration').value;
+        if (dur !== '') schedule.duration = parseInt(dur);
+        var minRate = panel.querySelector('.sched-min-rate').value;
+        if (minRate !== '') {
+          schedule.minChargingRate = Math.round(parseFloat(minRate) * 10) / 10;
+        }
+
+        schedules.push(schedule);
+      });
+
+      var profile = {
+        id: parseInt(document.getElementById('profileId').value) || 0,
+        stackLevel: parseInt(document.getElementById('stackLevel').value) || 0,
+        chargingProfilePurpose: purpose,
+        chargingProfileKind: kind,
+        chargingSchedule: schedules
+      };
+
+      if (kind === 'Recurring') {
+        profile.recurrencyKind = document.getElementById('recurrencyKind').value;
+      }
+      if (purpose === 'TxProfile') {
+        var txId = document.getElementById('transactionId').value;
+        if (txId !== '') profile.transactionId = txId;
+      }
+      var validFrom = document.getElementById('validFrom').value;
+      if (validFrom) profile.validFrom = new Date(validFrom).toISOString();
+      var validTo = document.getElementById('validTo').value;
+      if (validTo) profile.validTo = new Date(validTo).toISOString();
+
+      return {
+        evseId: parseInt(document.getElementById('evseId').value) || 0,
+        chargingProfile: profile
+      };
+    }
+
+    // =========================================================================
+    // Output update
+    // =========================================================================
+    function updateOutput() {
+      clearErrors();
+
+      var errors = validate();
+      showErrors(errors);
+
+      var payload = buildPayload();
+      var json;
+      if (showCallFrame) {
+        var callFrame = [2, callFrameUniqueId, "SetChargingProfile", payload];
+        json = JSON.stringify(callFrame, null, 2);
+      } else {
+        json = JSON.stringify(payload, null, 2);
+      }
+      var codeEl = document.getElementById('json-output');
+      codeEl.textContent = json;
+      delete codeEl.dataset.highlighted;
+      hljs.highlightElement(codeEl);
+    }
+
+    // --- Event delegation for live updates on top-level form inputs ---
+    document.getElementById('profile-form').addEventListener('input', function(e) {
+      if (!e.target.closest('.schedule-panel') && !e.target.closest('.period-row')) {
+        updateOutput();
+      }
+    });
+    document.getElementById('profile-form').addEventListener('change', function(e) {
+      if (!e.target.closest('.schedule-panel') && !e.target.closest('.period-row')) {
+        updateOutput();
+      }
+    });
+
+    // =========================================================================
+    // Examples
+    // =========================================================================
+    var EXAMPLES = {
+      dcsitelimit: {
+        evseId: 0,
+        profileId: 1,
+        stackLevel: 0,
+        purpose: 'ChargingStationMaxProfile',
+        kind: 'Absolute',
+        schedules: [{
+          id: 1,
+          rateUnit: 'W',
+          periods: [{ start: '0:00', limit: 150000 }]
+        }]
+      },
+      gridconstraint: {
+        evseId: 0,
+        profileId: 2,
+        stackLevel: 0,
+        purpose: 'ChargingStationExternalConstraints',
+        kind: 'Absolute',
+        schedules: [{
+          id: 1,
+          rateUnit: 'W',
+          periods: [
+            { start: '0:00', limit: 100000 },
+            { start: '12:00', limit: 50000 },
+            { start: '20:00', limit: 100000 }
+          ]
+        }]
+      },
+      offpeakac: {
+        evseId: 0,
+        profileId: 100,
+        stackLevel: 0,
+        purpose: 'TxDefaultProfile',
+        kind: 'Recurring',
+        recurrencyKind: 'Daily',
+        schedules: [{
+          id: 1,
+          rateUnit: 'A',
+          duration: 86400,
+          periods: [
+            { start: '0:00', limit: 32, phases: 3 },
+            { start: '8:00', limit: 16, phases: 3 },
+            { start: '20:00', limit: 32, phases: 3 }
+          ]
+        }]
+      },
+      dcrampdown: {
+        evseId: 1,
+        profileId: 50,
+        stackLevel: 0,
+        purpose: 'TxProfile',
+        kind: 'Relative',
+        transactionId: 'tx-abc12345-def',
+        schedules: [{
+          id: 1,
+          rateUnit: 'W',
+          periods: [
+            { start: '0:00', limit: 150000 },
+            { start: '0:20', limit: 50000 }
+          ]
+        }]
+      },
+      curtailment: {
+        evseId: 0,
+        profileId: 999,
+        stackLevel: 99,
+        purpose: 'ChargingStationMaxProfile',
+        kind: 'Absolute',
+        schedules: [{
+          id: 1,
+          rateUnit: 'W',
+          periods: [{ start: '0:00', limit: 0 }]
+        }]
+      },
+      dualschedule: {
+        evseId: 1,
+        profileId: 10,
+        stackLevel: 0,
+        purpose: 'TxDefaultProfile',
+        kind: 'Absolute',
+        schedules: [
+          {
+            id: 1,
+            rateUnit: 'A',
+            periods: [{ start: '0:00', limit: 32, phases: 3 }]
+          },
+          {
+            id: 2,
+            rateUnit: 'W',
+            periods: [{ start: '0:00', limit: 22000 }]
+          }
+        ]
+      }
+    };
+
+    function clearAllSchedules() {
+      document.getElementById('schedule-tabs').innerHTML = '';
+      document.getElementById('schedule-panels').innerHTML = '';
+      schedDomCounter = 0;
+      activeIdx = null;
+    }
+
+    function loadExample(name) {
+      var ex = EXAMPLES[name];
+      if (!ex) return;
+
+      // Set top-level fields
+      document.getElementById('evseId').value = ex.evseId;
+      document.getElementById('profileId').value = ex.profileId;
+      document.getElementById('stackLevel').value = ex.stackLevel;
+      document.getElementById('chargingProfilePurpose').value = ex.purpose;
+      document.getElementById('chargingProfileKind').value = ex.kind;
+
+      // Clear optional fields
+      document.getElementById('validFrom').value = '';
+      document.getElementById('validTo').value = '';
+      document.getElementById('transactionId').value = ex.transactionId || '';
+      document.getElementById('recurrencyKind').value = ex.recurrencyKind || 'Daily';
+
+      // Rebuild schedules
+      clearAllSchedules();
+      ex.schedules.forEach(function(sched) {
+        var idx = createSchedulePanel(sched.id);
+        var panel = document.querySelector('.schedule-panel[data-idx="' + idx + '"]');
+        panel.querySelector('.sched-id').value = sched.id;
+        panel.querySelector('.sched-rate-unit').value = sched.rateUnit;
+        panel.querySelector('.sched-start').value = sched.startSchedule || '';
+        panel.querySelector('.sched-duration').value = sched.duration !== undefined ? sched.duration : '';
+        panel.querySelector('.sched-min-rate').value = sched.minChargingRate !== undefined ? sched.minChargingRate : '';
+
+        // Clear default period and add example periods
+        panel.querySelector('.periods-container').innerHTML = '';
+        sched.periods.forEach(function(p) {
+          addPeriodSilent(panel, p.start, p.limit, p.phases !== undefined ? p.phases : '', p.phaseToUse || '');
+        });
+      });
+
+      // Switch to first tab
+      var firstTab = document.querySelector('.schedule-tab');
+      if (firstTab) switchSchedule(parseInt(firstTab.getAttribute('data-idx')));
+
+      updateVisibility();
+      updateOutput();
+      saveToStorage();
+    }
+
+    document.querySelectorAll('.example-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        loadExample(this.dataset.example);
+      });
+    });
+
+    // =========================================================================
+    // Reset
+    // =========================================================================
+    function resetToDefaults() {
+      document.getElementById('evseId').value = 0;
+      document.getElementById('profileId').value = 1;
+      document.getElementById('stackLevel').value = 0;
+      document.getElementById('chargingProfilePurpose').value = 'TxDefaultProfile';
+      document.getElementById('chargingProfileKind').value = 'Absolute';
+      document.getElementById('recurrencyKind').value = 'Daily';
+      document.getElementById('transactionId').value = '';
+      document.getElementById('validFrom').value = '';
+      document.getElementById('validTo').value = '';
+
+      clearAllSchedules();
+      var idx = createSchedulePanel(1);
+      addPeriodSilent(document.querySelector('.schedule-panel[data-idx="' + idx + '"]'), '0:00', 11000, '', '');
+
+      updateVisibility();
+      updateOutput();
+      saveToStorage();
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', resetToDefaults);
+
+    // =========================================================================
+    // LocalStorage persistence
+    // =========================================================================
+    var STORAGE_KEY = 'ocpp201-profile-generator';
+
+    function getFormState() {
+      var schedules = [];
+      document.querySelectorAll('.schedule-panel').forEach(function(panel) {
+        var periods = [];
+        panel.querySelectorAll('.period-row').forEach(function(row) {
+          periods.push({
+            start: row.querySelector('.period-start').value,
+            limit: row.querySelector('.period-limit').value,
+            phases: row.querySelector('.period-phases').value,
+            phaseToUse: row.querySelector('.period-phase').value
+          });
+        });
+        schedules.push({
+          id: panel.querySelector('.sched-id').value,
+          rateUnit: panel.querySelector('.sched-rate-unit').value,
+          startSchedule: panel.querySelector('.sched-start').value,
+          duration: panel.querySelector('.sched-duration').value,
+          minChargingRate: panel.querySelector('.sched-min-rate').value,
+          periods: periods
+        });
+      });
+
+      return {
+        evseId: document.getElementById('evseId').value,
+        profileId: document.getElementById('profileId').value,
+        stackLevel: document.getElementById('stackLevel').value,
+        chargingProfilePurpose: document.getElementById('chargingProfilePurpose').value,
+        chargingProfileKind: document.getElementById('chargingProfileKind').value,
+        recurrencyKind: document.getElementById('recurrencyKind').value,
+        transactionId: document.getElementById('transactionId').value,
+        validFrom: document.getElementById('validFrom').value,
+        validTo: document.getElementById('validTo').value,
+        schedules: schedules
+      };
+    }
+
+    function saveToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(getFormState()));
+      } catch (e) { /* quota exceeded or private browsing */ }
+    }
+
+    function loadFromStorage() {
+      try {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return false;
+
+        var state = JSON.parse(saved);
+
+        document.getElementById('evseId').value = state.evseId;
+        document.getElementById('profileId').value = state.profileId;
+        document.getElementById('stackLevel').value = state.stackLevel;
+        document.getElementById('chargingProfilePurpose').value = state.chargingProfilePurpose;
+        document.getElementById('chargingProfileKind').value = state.chargingProfileKind;
+        document.getElementById('recurrencyKind').value = state.recurrencyKind || 'Daily';
+        document.getElementById('transactionId').value = state.transactionId || '';
+        document.getElementById('validFrom').value = state.validFrom || '';
+        document.getElementById('validTo').value = state.validTo || '';
+
+        // Rebuild schedules from state
+        clearAllSchedules();
+        if (state.schedules && state.schedules.length > 0) {
+          state.schedules.forEach(function(sched) {
+            var schedId = (sched.id !== undefined && sched.id !== '') ? sched.id : 1;
+            var idx = createSchedulePanel(schedId);
+            var panel = document.querySelector('.schedule-panel[data-idx="' + idx + '"]');
+            panel.querySelector('.sched-id').value = schedId;
+            panel.querySelector('.sched-rate-unit').value = sched.rateUnit || 'W';
+            panel.querySelector('.sched-start').value = sched.startSchedule || '';
+            panel.querySelector('.sched-duration').value = (sched.duration !== undefined && sched.duration !== '') ? sched.duration : '';
+            panel.querySelector('.sched-min-rate').value = (sched.minChargingRate !== undefined && sched.minChargingRate !== '') ? sched.minChargingRate : '';
+
+            // Clear default period and add saved periods
+            panel.querySelector('.periods-container').innerHTML = '';
+            if (sched.periods && sched.periods.length > 0) {
+              sched.periods.forEach(function(p) {
+                addPeriodSilent(panel, p.start, p.limit, p.phases, p.phaseToUse || '');
+              });
+            } else {
+              addPeriodSilent(panel, '0:00', 11000, '', '');
+            }
+          });
+        } else {
+          var idx = createSchedulePanel(1);
+          addPeriodSilent(document.querySelector('.schedule-panel[data-idx="' + idx + '"]'), '0:00', 11000, '', '');
+        }
+
+        // Switch to first tab
+        var firstTab = document.querySelector('.schedule-tab');
+        if (firstTab) switchSchedule(parseInt(firstTab.getAttribute('data-idx')));
+
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function clearStorage() {
+      localStorage.removeItem(STORAGE_KEY);
+      resetToDefaults();
+    }
+
+    document.getElementById('btn-clear-storage').addEventListener('click', clearStorage);
+
+    // Hook saveToStorage into updateOutput
+    var originalUpdateOutput = updateOutput;
+    updateOutput = function() {
+      originalUpdateOutput();
+      saveToStorage();
+    };
+
+    // =========================================================================
+    // Initialize
+    // =========================================================================
+    var loaded = loadFromStorage();
+    if (!loaded) {
+      var idx = createSchedulePanel(1);
+      addPeriodSilent(document.querySelector('.schedule-panel[data-idx="' + idx + '"]'), '0:00', 11000, '', '');
+    }
+    updateVisibility();
+    updateOutput();
+  </script>
+</body>
+</html>

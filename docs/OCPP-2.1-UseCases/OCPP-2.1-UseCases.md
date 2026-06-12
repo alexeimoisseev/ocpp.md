@@ -1201,41 +1201,87 @@ The mirror of P01: when a charging station needs to send information to the CSMS
 
 ## Q. Bidirectional Power Transfer (V2X)
 
+> Block Q introduces bidirectional power transfer (V2X) — the EV exporting energy back to the grid as well as importing it. The control surface is the existing smart-charging machinery extended with an `operationMode` field on each charging-schedule period and signed `setpoint`/`dischargeLimit` values. For the conceptual model, the operation-mode catalogue, and how V2X profiles merge with ordinary limits, see the [Bidirectional Power Transfer deep-dive](../OCPP-2.1-Bidirectional/OCPP-2.1-Bidirectional.md) and the [Smart Charging deep-dive](../OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md).
+
 ### Q01 — V2X Authorization
-_(summary pending)_
+
+When an ISO 15118-20 EV is authorized for bidirectional transfer, the station includes the vehicle's EVCCID in the `idToken.additionalInfo` of `AuthorizeRequest` so the CSMS can decide whether to allow V2X for this vehicle; the CSMS answers with `idTokenInfo.status = Accepted` and an `allowedEnergyTransfer` list naming the permitted transfer types (e.g. `DC_BPT`, `AC_BPT`). The station then opens a transaction and reports the EV's chosen `requestedEnergyTransfer` together with `v2xChargingParameters`, `controlMode` and an optional `departureTime` via `NotifyEVChargingNeeds`; the CSMS accepts (optionally `Processing` while it computes a profile) or rejects, in which case the station either renegotiates a different service with the EV or stops the transaction with `stoppedReason = ReqEnergyTransferRejected`. A V2X-mode charging schedule arrives by `SetChargingProfile` (or a pre-installed `TxDefaultProfile`, signalled by a `NoChargingProfile` response). If the allowed set changes mid-session, the CSMS pushes `NotifyAllowedEnergyTransfer`.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent), [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyAllowedEnergyTransfer](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Bidirectional.md#notifyallowedenergytransfer)
+
+> **ESCALATE: GRID-MARKET** — Whether a given vehicle (by idToken, EVCCID or vehicle certificate) is permitted to perform V2X, and whether third-party (eMSP/aggregator) authorization must be obtained before granting it, is an operator/market-contract decision outside the protocol.
 
 ### Q02 — Starting in operationMode ChargingOnly before enabling V2X
-_(summary pending)_
+
+This use case covers the common situation where, at authorization time, the CSMS cannot yet confirm whether V2X is allowed (for example because a third-party permission or the selected EVSE is not yet known). The CSMS accepts the authorization but omits `allowedEnergyTransfer`, and the session begins in `operationMode = ChargingOnly` — an ordinary unidirectional charge with no `setpoint`/`dischargeLimit` fields set. Once the CSMS later decides V2X is permitted (using the EVCCID, vehicle certificate, or idToken it has on file), it sends `NotifyAllowedEnergyTransfer` carrying the transaction id and an updated list that now includes a bidirectional type; the station accepts and triggers an ISO 15118 service renegotiation so the EV can upgrade to the bidirectional service, after which a new `NotifyEVChargingNeeds` reports the upgraded `requestedEnergyTransfer`.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize), [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyAllowedEnergyTransfer](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Bidirectional.md#notifyallowedenergytransfer)
 
 ### Q03 — Central V2X control with charging schedule
-_(summary pending)_
+
+The CSMS dictates the EV's charge/discharge behaviour by sending a `TxProfile` or `TxDefaultProfile` whose `chargingSchedule` contains one or more periods with `operationMode = CentralSetpoint` and a (signed) `setpoint` for the active power the EV should import (positive) or export (negative); it may also bound the range with `limit` and `dischargeLimit`. In ISO 15118 Scheduled mode the station hands the schedule to the EV and any change triggers a 15118 renegotiation; in Dynamic mode the station simply applies the period's setpoint at each boundary without renegotiation. For a `Dynamic` profile kind the CSMS can later revise the setpoint with `UpdateDynamicSchedule`. How long the schedule survives an offline period is governed by `maxOfflineDuration`/`invalidAfterOfflineDuration` (see Q11/Q12).
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [UpdateDynamicSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#updatedynamicschedule), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
 
 ### Q04 — Central V2X control with dynamic CSMS setpoint
-_(summary pending)_
+
+A variant of Q03 in which, instead of a multi-period schedule, the CSMS sends a `Dynamic` profile holding a single `chargingSchedulePeriod` (again `operationMode = CentralSetpoint`) and then steers it in near-real-time with frequent `UpdateDynamicSchedule` messages — suited to following an external dispatch signal. The optional `chargingSchedule.duration` acts as a watchdog: if no update arrives within `duration` seconds of the last `SetChargingProfile`/`UpdateDynamicSchedule`, the schedule expires and the station falls back to the next valid charging profile. As an alternative the station may pull updates itself via `PullDynamicScheduleUpdate` on the configured `dynUpdateInterval`.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [UpdateDynamicSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#updatedynamicschedule), [PullDynamicScheduleUpdate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#pulldynamicscheduleupdate)
 
 ### Q05 — External V2X setpoint control with a charging profile from CSMS
-_(summary pending)_
+
+Here the CSMS explicitly delegates real-time control to an External System (e.g. a local EMS) but only inside a window it defines. The CSMS sends a `Dynamic` `TxProfile`/`TxDefaultProfile` whose period carries `operationMode = ExternalSetpoint` (External System drives `setpoint`/`setpointReactive`) or `ExternalLimits` (it drives `limit`/`dischargeLimit`). During that period the station applies values supplied by the external system and stamps `dynUpdateTime` on each change; the configuration variable `ExternalConstraintsProfileDisallowed = true` ensures the external system cannot otherwise impose its own profile. If `chargingSchedule.duration` is set and no external update arrives in time, the profile becomes invalid and the station falls back, regaining validity once a fresh update is received. The transport between the External System and the station is out of OCPP scope.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
+
+> **ESCALATE: VENDOR-EXTENSION** — The communication channel and protocol by which the External System conveys setpoints/limits to the Charging Station is explicitly out of scope of OCPP and is a vendor/integration decision.
 
 ### Q06 — External V2X control with a charging profile from an External System
-_(summary pending)_
+
+Unlike Q05, here the External System itself owns the profile: it installs a `ChargingStationExternalConstraints` charging profile (possible only when `ExternalConstraintsProfileDisallowed` is false/absent). Three flavours exist — a scheduled list of limits (`Absolute`, `ExternalLimits`), a dynamically-varied single limit (`Dynamic`, `ExternalLimits`), or a dynamically-varied setpoint (`Dynamic`, `ExternalSetpoint`). Because an external system is unaware of individual sessions, such a profile typically targets EVSE #0 (the whole station), which must then divide charge/discharge power across its EVSEs to honour the aggregate `limit`/`dischargeLimit`/`setpoint`. When the profile is set or changes by more than `LimitChangeSignificance`, the station reports it to the CSMS with `NotifyChargingLimit` (`chargingLimitSource = EMS`). When both an external setpoint and a Tx(Default)Profile setpoint are active, `SmartChargingCtrlr.SetpointPriority` resolves which wins.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
+
+> **ESCALATE: VENDOR-EXTENSION** — How the External System delivers its `ChargingStationExternalConstraints` profile to the station is out of OCPP scope; whether external profiles are allowed at all (`ExternalConstraintsProfileDisallowed`) and the `SetpointPriority` tie-break are operator configuration choices.
 
 ### Q07 — Central V2X control for frequency support
-_(summary pending)_
+
+A specialisation of Q04 for grid frequency regulation when calibrated central frequency measurements are needed. The CSMS sends a `Dynamic` profile with a single period of `operationMode = CentralFrequency` and a `setpoint`, then continuously revises it with `UpdateDynamicSchedule` as it tracks the centrally-measured frequency (usually for an aggregated fleet). `limit`/`dischargeLimit` must not appear in a `CentralFrequency` period, and the CSMS is advised to set a `duration` so the schedule does not run forever if updates stop — at which point the station can fall back to a lower-stack-level `LocalFrequency` profile (Q08). This frequency support is the charging profile's primary purpose, distinct from the grid-code frequency-droop behaviour configured under DER Control (block R).
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [UpdateDynamicSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#updatedynamicschedule)
 
 ### Q08 — Local V2X control for frequency support
-_(summary pending)_
+
+Frequency support computed locally by the station from its own frequency readings, with no live setpoint from the CSMS. The CSMS sends a `LocalFrequency` schedule carrying a `v2xBaseline` power and a `v2xFreqWattCurve` (at least two points); the station continuously measures grid frequency and sets power to the baseline plus the curve-interpolated value, re-evaluating whenever the frequency moves by `LocalFrequencyUpdateThreshold` mHz. For an aFRR (automatic Frequency Restoration Reserve) service the schedule also includes a `v2xSignalWattCurve`, and the CSMS relays the TSO's dispatch via `AFRRSignal` (a `signal` plus a `timestamp` at which it applies); the station adds that delta on top of the frequency-watt setpoint. The schedule must use `chargingRateUnit = W`, and missing curves are rejected with `NoFreqWattCurve`/`NoSignalWattCurve`.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [AFRRSignal](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Bidirectional.md#afrrsignal)
+
+> **ESCALATE: GRID-MARKET** — The frequency-watt and signal-watt curves, the baseline, and the source/meaning of the aFRR signal forwarded to the station are dictated by the TSO/grid-code and market product the operator is participating in.
 
 ### Q09 — Local V2X control for load balancing
-_(summary pending)_
+
+The station is given a `LocalLoadBalancing` schedule and continuously reads an upstream (building/site) grid meter to keep the measured load between a configured `LowerThreshold` and `UpperThreshold`, modulating the EV's charge/discharge `setpoint` by the computed delta (with optional `UpperOffset`/`LowerOffset` to control permitted overshoot). It rejects the profile with `UnsupportedParam` if `LocalLoadBalancing` is not in `V2XSupportedOperationModes`, or `MissingDevModelInfo` if the threshold/offset variables are unset or inconsistent. The resulting setpoint is capped at `limit`/`dischargeLimit` when those are present. This works for a single station (possibly across its EVSEs); coordinating multiple stations requires a central or local controller using the CentralSetpoint mode instead.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
 
 ### Q10 — Idle, minimizing energy consumption
-_(summary pending)_
+
+An `operationMode = Idle` schedule period asks the EV to neither charge nor discharge while the session stays connected. Two boolean controls modulate the period: `preconditioning = true` permits the EV to draw some power to keep its battery at an optimal temperature for later charge/discharge, and `evseSleep = true` (only if `SupportsEvseSleep`) lets the station power down the EVSE's electronics for this transaction until an event wakes it (a new period, a new profile — including 0 W limits — or transaction end). While asleep the station reports `evseSleep = true` in `TransactionEvent`. A period with `operationMode = Idle` must not carry any `limit`/`dischargeLimit`/`setpoint`/`setpointReactive`, otherwise the profile is rejected with `InvalidSchedule`.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
 
 ### Q11 — Going offline during V2X operation
-_(summary pending)_
+
+This use case defines how long a V2X session may continue once the station loses its CSMS connection. The `maxOfflineDuration` field of the active `ChargingProfileType` sets a countdown that starts the moment the station detects it is offline; when it elapses the station reverts to the next valid (lower stack-level) profile — which may itself be another V2X profile if its own `maxOfflineDuration` has not run out, or ultimately a `ChargingOnly` fallback or unlimited charging if nothing remains. The CSMS should simply assume the V2X operation has reverted on detecting the outage rather than trying to predict the exact instant, since the two sides notice the disconnection at different times. Profiles with `invalidAfterOfflineDuration = true` whose window has elapsed are not reactivated on reconnection. The requirements are those of K01's `maxOfflineDuration`.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
 
 ### Q12 — Resuming a V2X operation after an offline period
-_(summary pending)_
+
+The mirror of Q11, describing the state on reconnection. If the offline interval was shorter than the V2X profile's `maxOfflineDuration`, the profile stayed active throughout and nothing changes when the link returns. If it was longer, the profile had already expired while offline and the station has been running on the next valid (lower stack-level) profile — for instance reverting from a `CentralSetpoint` V2X profile at stack level #2 to a `ChargingOnly` profile at level #1; whether it can be resumed depends on `invalidAfterOfflineDuration`. On reconnection the CSMS can re-establish the desired V2X mode by re-sending or updating the relevant charging profile.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [UpdateDynamicSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#updatedynamicschedule)
 
 ---
 

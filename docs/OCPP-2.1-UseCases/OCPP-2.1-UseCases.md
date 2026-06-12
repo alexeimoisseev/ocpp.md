@@ -787,91 +787,173 @@ This use case maps the ISO 15118 metering loop onto OCPP. During AC or DC chargi
 ## K. Smart Charging
 
 ### K01 — SetChargingProfile
-_(summary pending)_
+The base smart-charging operation: the CSMS sends a charging profile to an EVSE (or to EVSE 0 for the whole station) to cap the power or current an EV may draw over a period of time, staying within whatever limits an external system imposes. A profile carries a purpose (`TxProfile`, `TxDefaultProfile`, `ChargingStationMaxProfile`, `ChargingStationExternalConstraints`, `PriorityCharging`, `LocalGeneration`), a stack level and a validity window; the station re-evaluates its active profiles whenever a new one is set. A `TxProfile` must reference a `transactionId` and is only applied if that transaction is known; the CSMS must not reuse the same stackLevel/purpose/evseId combination across overlapping profiles, and it must never set `ChargingStationExternalConstraints` itself (that purpose is reserved for externally imposed limits). See the [OCPP 2.0.1 Smart Charging deep-dive](../OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging.md) for profile-purpose stacking and composite-schedule fundamentals.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
 
 ### K02 — Central Smart Charging
-_(summary pending)_
+The CSMS holds the load-management intelligence centrally. After authorization the EVSE first applies whatever default profile it already holds (limiting the Control Pilot signal so the EV cannot draw full power before the CSMS reacts), and once the transaction starts the CSMS may respond to the transaction event by pushing a per-transaction `TxProfile` that overrules the `TxDefaultProfile` for the life of that session and is deleted when it ends. The station continuously adapts current/power to the merged active profiles. It is recommended to omit the schedule `duration` so the `TxProfile` lasts the whole transaction; if it expires early the station falls back to the lowest limit of the active `TxDefaultProfile` and `ChargingStationMaxProfile`, then to the local hardware limit. The CSMS should check the `offline` flag on a transaction event before sending a profile, since the event may have been cached.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: VENDOR-CONFIG** — How the CSMS calculates per-transaction constraints (the central load-balancing algorithm) is not specified by OCPP; it is an operator/vendor backend decision.
 
 ### K03 — Local Smart Charging
-_(summary pending)_
+An illustrative (non-prescriptive) example of load-balancing performed by a Local Controller rather than the CSMS. The Local Controller is given a total cluster limit — via a `ChargingStationMaxProfile` from the CSMS or a `ChargingStationExternalConstraints` profile from an EMS — and divides that budget across active transactions. Charging stations carry a low `TxDefaultProfile` (e.g. 6 A) so a vehicle cannot pull full power before the controller intervenes; when a transaction starts or stops, the Local Controller re-issues `TxProfile`s to the remaining sessions to redistribute the available current. The Local Controller sits in the OCPP path between stations and CSMS, registering transaction IDs as it forwards transaction events. See the [OCPP 2.0.1 Smart Charging deep-dive](../OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging.md) for the Local Controller topology.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: VENDOR-CONFIG** — The local load-balancing strategy (how the cluster budget is split, whether departure time or state-of-charge is considered) is an implementation choice; OCPP only carries the resulting profiles.
 
 ### K04 — Internal Load Balancing
-_(summary pending)_
+Here the Charging Station itself balances current/power between its own EVSEs, rather than relying on the CSMS or a Local Controller. The station is configured with a fixed ceiling (typically the grid-connection limit) — expressed as a `ChargingStationMaxProfile`, which may only be set at EVSE 0 (the whole station) — and controls each EVSE's schedule so the combined draw stays within it. The optional `minChargingRate` field tells the station that charging below a certain rate is inefficient, letting it choose a smarter balancing strategy. New in 2.1: when a `LocalGeneration` profile is active, the combined energy flow may go up to `ChargingStationMaxProfile + LocalGeneration` (see [K27](#k27--smart-charging-with-ems-and-localgeneration)).
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
+
+> **ESCALATE: VENDOR-CONFIG** — The internal per-EVSE power-distribution algorithm is left to the Charging Station vendor; OCPP only sets the overall ceiling.
 
 ### K05 — Remote Start Transaction with Charging Profile
-_(summary pending)_
+The CSMS embeds a charging profile directly in the remote-start request so the transaction is governed by the right schedule from the very first moment — important because, for example, the choice between three-phase and single-phase charging cannot always be changed once charging has begun, and because the station may go offline right after receiving the request. The included profile must have purpose `TxProfile` and cannot carry a `transactionId` (none exists yet); the station uses it when computing its composite schedule. A station that supports smart charging but receives an invalid profile rejects the start with `InvalidProfile` or `InvalidSchedule`; a station without smart-charging support simply ignores the profile.
+
+**Messages:** [RequestStartTransaction](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#requeststarttransaction), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
 
 ### K06 — Offline Behavior Smart Charging During Transaction
-_(summary pending)_
+Defines what a station does with smart charging when it loses CSMS connectivity mid-transaction. If it had already received a `TxProfile` for the active transaction, it keeps applying that profile until the transaction ends or the profile expires, whichever comes first, operating stand-alone with no need for the backend. If it holds no charging profiles at all when it goes offline, it runs the transaction as though no constraints apply. No dedicated message is exchanged while offline — this use case is about local fallback behaviour.
+
+**Messages:** No dedicated message.
 
 ### K07 — Offline Behavior Smart Charging at Start of Transaction
-_(summary pending)_
+Covers a transaction that both starts and runs while the station is offline. By installing a `TxDefaultProfile` ahead of time, the CSMS guarantees that any transaction begun during a connectivity outage is governed by a sensible schedule. The station authorizes the driver locally (Local Authorization List, Authorization Cache, or `OfflineTxForUnknownIdEnabled`), starts the transaction as usual, and continuously adapts current/power to the already-installed default profile. See [K01](#k01--setchargingprofile) and the [OCPP 2.0.1 Smart Charging deep-dive](../OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging.md) for how profile purposes combine.
+
+**Messages:** No dedicated message.
 
 ### K08 — Get Composite Schedule
-_(summary pending)_
+The CSMS asks the station to report its composite schedule — the single effective schedule that results from merging all active charging profiles of the different purposes plus any local limits, taking the most restrictive value in each time interval. The report shows the power or current the station expects to draw from the grid for the requested EVSE over the requested duration; requesting EVSE 0 yields the total grid-connection forecast. The result is only indicative for that instant, since local balancing or an EVSE becoming free can change it later. New in 2.1: when no transaction is active the station computes the schedule as if a `TxDefaultProfile`-driven transaction were running (with `randomizedDelay = 0`); V2X-aware merging caps `setpoint` between `dischargeLimit` and `limit`, reports per-phase `limit_L2`/`limit_L3` values, and adds `LocalGeneration` capacity on top of the merged limit. See the [V2X bidirectional deep-dive](../OCPP-2.1-Bidirectional/OCPP-2.1-Bidirectional.md) for setpoint/dischargeLimit sign conventions.
+
+**Messages:** [GetCompositeSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#getcompositeschedule)
 
 ### K09 — Get Charging Profiles
-_(summary pending)_
+The CSMS retrieves the charging profiles currently installed in a station — all of them or a filtered subset — for automatic control logic or operator debugging. The request filters either by a list of `chargingProfileId`s, or by some combination of `stackLevel`, `chargingLimitSource` and `chargingProfilePurpose`, optionally scoped to a specific `evseId` (EVSE 0 returns only the station-level profiles such as `ChargingStationMaxProfile` and `ChargingStationExternalConstraints`). The station acknowledges with `Accepted` or `NoProfiles` if nothing matches, then streams the matching profiles back in one or more report messages, each carrying the original `requestId` and a `tbc` (to-be-continued) flag set on every report except the last.
+
+**Messages:** [GetChargingProfiles](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#getchargingprofiles), [ReportChargingProfiles](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#reportchargingprofiles)
 
 ### K10 — Clear Charging Profile
-_(summary pending)_
+The CSMS removes some or all previously installed charging profiles. The request can target a specific profile `id`, or filter by `evseId`, `chargingProfilePurpose` and `stackLevel`; the station clears every profile matching the supplied criteria and reports whether anything matched. If no installed profile matches, the station responds `Unknown` rather than treating it as an error.
+
+**Messages:** [ClearChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#clearchargingprofile)
 
 ### K11 — Set / Update External Charging Limit With Ongoing Transaction
-_(summary pending)_
+An External Control System — a DSO, smart meter, or home energy-management system — imposes a limit or schedule on the station over a non-OCPP interface (IEC 61850, OpenADR, or any protocol the station supports), and the station honours it for ongoing transactions while keeping the CSMS informed. The station never charges faster than the external limit (unless `ExternalConstraintsProfileDisallowed` is set), represents the limit internally as a `ChargingStationExternalConstraints` profile, and when the limit changes by more than `LimitChangeSignificance` it sends a `NotifyChargingLimit` (with `chargingLimitSource` never set to `CSO`, optionally including the schedule when `EnableNotifyChargingLimitWithSchedules` is true). If the actual charging rate changes significantly it also emits a transaction event with `triggerReason = ChargingRateChanged`. New in 2.1, the station may represent the external limit as an Absolute, Relative, or Dynamic profile (`operationMode = ExternalLimits`).
+
+**Messages:** [NotifyChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifycharginglimit), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: VENDOR-CONFIG** — The interface and protocol between the External Control System and the station, and whether limits are modelled as Absolute/Relative/Dynamic profiles, are deployment decisions outside OCPP.
 
 ### K12 — Set / Update External Charging Limit Without Ongoing Transaction
-_(summary pending)_
+The same external-limit mechanism as [K11](#k11--set--update-external-charging-limit-with-ongoing-transaction), but applied when no transaction is active — the limit constrains the grid connection and any future transactions rather than an in-progress session. The total load of all EVSEs must stay within the received limit, the station represents it as a `ChargingStationExternalConstraints` profile (it is recommended to use negative profile IDs to avoid clashing with CSMS-assigned IDs), and it notifies the CSMS via `NotifyChargingLimit` when the limit changes by more than `LimitChangeSignificance`, again never using `chargingLimitSource = CSO`. Because no transaction is running, no transaction event is involved.
+
+**Messages:** [NotifyChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifycharginglimit)
+
+> **ESCALATE: VENDOR-CONFIG** — The non-OCPP interface to the external system and the profile representation are deployment decisions outside OCPP.
 
 ### K13 — Reset / Release External Charging Limit
-_(summary pending)_
+The mirror of [K11](#k11--set--update-external-charging-limit-with-ongoing-transaction)/[K12](#k12--set--update-external-charging-limit-without-ongoing-transaction): the External Control System lifts a previously imposed limit. The station stops constraining charging based on that limit, and if a transaction is ongoing it recalculates the schedule and ramps the charging rate back up. It tells the CSMS the limit is gone by sending `ClearedChargingLimit` (carrying the `chargingLimitSource`), and if the resulting rate change on an active transaction exceeds `LimitChangeSignificance` it also emits a transaction event with `triggerReason = ChargingRateChanged`.
+
+**Messages:** [ClearedChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#clearedcharginglimit), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
 
 ### K14 — External Charging Limit with Local Controller
-_(summary pending)_
+The external-limit pattern applied to a cluster managed by a Local Controller instead of a single station. When the External Control System sets a grid limit, the Local Controller notifies the CSMS with `NotifyChargingLimit`, recalculates schedules for the whole cluster, and pushes a `SetChargingProfile` to every station whose profile changed. When the external limit is released, it sends `ClearedChargingLimit` and clears the affected profiles with `ClearChargingProfile`. Requires `ExternalControlSignalsEnabled = true`.
+
+**Messages:** [NotifyChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifycharginglimit), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [ClearedChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#clearedcharginglimit), [ClearChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#clearchargingprofile)
+
+> **ESCALATE: VENDOR-CONFIG** — The Local Controller's cluster-recalculation algorithm and its non-OCPP link to the External Control System are implementation decisions outside OCPP.
 
 ### K15 — ISO 15118-2 Charging with load leveling
-_(summary pending)_
+Maps ISO 15118-2 high-level-communication charging (AC or DC) onto OCPP smart charging. When the EV sends its `ChargeParameterDiscoveryReq`, the station relays the EV's energy needs to the CSMS via `NotifyEVChargingNeeds`; the CSMS computes a schedule and returns it as a `SetChargingProfile` `TxProfile`, which the station folds into the ISO 15118 `ChargeParameterDiscoveryRes` (`SAScheduleList`) it sends back to the EV. Because that ISO message has a 60-second timeout, the CSMS must respond promptly — if it does not, or replies `Processing`, the station returns a schedule matching the EVSE's own capability and a late profile then triggers a renegotiation per [K16](#k16--renegotiation-initiated-by-csms). The `TxStartPoint` must fire before `ChargeParameterDiscoveryReq` so a transaction exists to attach the `TxProfile` to. Optionally the station forwards the EV's own calculated schedule with `NotifyEVChargingSchedule`. New in 2.1: signed SalesTariffs are supported via the `signatureValue` field.
+
+**Messages:** [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyEVChargingSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingschedule), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
 
 ### K16 — Renegotiation initiated by CSMS
-_(summary pending)_
+During an ISO 15118 session the CSMS changes the charging schedule by sending a new `SetChargingProfile`. The station cannot push this to the EV unilaterally; instead, on the EV's next `CurrentDemandReq` (DC) or `ChargingStatusReq` (AC) it signals `evseNotification = ReNegotiation`, the EV confirms with a `PowerDeliveryReq` (`chargeProgress = ReNegotiate`), and a fresh `ChargeParameterDiscovery` exchange then delivers the new `SAScheduleList`. The EV–station message detail is informative only; OCPP mandates only the profile push. Because every limit change in a dynamic schedule would force a renegotiation, the CSMS should avoid frequently updated `Dynamic` profiles for ISO 15118-2 sessions.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
 
 ### K17 — Renegotiation initiated by EV
-_(summary pending)_
+The EV triggers the new schedule. When it sends a `ChargeParameterDiscoveryReq` carrying updated charging-needs parameters, the station forwards them to the CSMS via `NotifyEVChargingNeeds`; the CSMS computes a schedule that tries to honour the EV's needs while respecting other constraints and returns it as a `SetChargingProfile`. The station relays the new schedule to the EV in a `ChargeParameterDiscoveryRes`, the EV confirms with `PowerDeliveryReq` (`chargeProgress = Start`), and the station resumes power delivery if it had been suspended for the renegotiation. If the EV supplies its own charging profile, the station reports it back with `NotifyEVChargingSchedule`.
+
+**Messages:** [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyEVChargingSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingschedule)
 
 ### K18 — ISO 15118-20 Scheduled Control Mode
-_(summary pending)_
+New in OCPP 2.1: ISO 15118-20 scheduled-control charging. After the EV sends its energy needs and departure time in a `ScheduleExchangeReq`, the station relays them to the CSMS via `NotifyEVChargingNeeds` with `controlMode = ScheduledControl`. The CSMS replies with a `SetChargingProfile` carrying up to three alternative charging schedules plus optional price information; the station offers these to the EV in its `ScheduleExchangeRes`, and the EV picks one and returns its own calculated schedule, which the station forwards with `NotifyEVChargingSchedule`. See the [OCPP 2.1 Smart Charging deltas deep-dive](../OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md) for ISO 15118-20 control-mode details.
+
+**Messages:** [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyEVChargingSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingschedule)
 
 ### K19 — ISO 15118-20 Dynamic Control Mode
-_(summary pending)_
+New in OCPP 2.1: ISO 15118-20 dynamic-control charging, where the operator (not the EV) drives the schedule in real time. The station relays the EV's `ScheduleExchangeReq` to the CSMS via `NotifyEVChargingNeeds` with `controlMode = DynamicControl`; the CSMS returns a single charging schedule plus optional price information in a `SetChargingProfile`. The station passes only the pricing schedule (not the charging schedule) to the EV in its `ScheduleExchangeRes`; the EV then sends its fastest-possible `EVPowerProfile` in a `PowerDeliveryReq`, which the station ignores, instead applying the CSMS schedule and reporting it back with `NotifyEVChargingSchedule`. See the [OCPP 2.1 Smart Charging deltas deep-dive](../OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md) for dynamic-mode behaviour.
+
+**Messages:** [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyEVChargingSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingschedule)
 
 ### K20 — ISO 15118-20 Adjusting charging schedule when energy needs change
-_(summary pending)_
+New in OCPP 2.1: handles a mid-session change in the EV's departure time or target energy during an ISO 15118-20 session, regardless of which actor noticed the change. Whether the new `DepartureTime`/`EVTargetEnergyRequest` arrives via the EV (in `ScheduleExchangeReq` for scheduled control, or `ChargeLoopReq` for dynamic control) or is set by the station itself, the station reports the updated needs to the CSMS with `NotifyEVChargingNeeds`. The CSMS recomputes and pushes a new schedule via `SetChargingProfile`, which the station applies — in scheduled mode it returns the schedule to the EV and forwards the EV's projected `EVPowerProfile` back with `NotifyEVChargingSchedule`; in dynamic mode it steers charging directly through the `ChargeLoopRes`.
+
+**Messages:** [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyEVChargingSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingschedule)
 
 ### K21 — Requesting priority charging remotely
-_(summary pending)_
+New in OCPP 2.1: a driver requests immediate, maximum-power charging through the CSMS (for example via a smartphone app), overriding any V2X discharging or deferred schedule. The CSMS sends `UsePriorityCharging` with `activate = true` for the transaction; if the station holds a `PriorityCharging` profile it accepts, stops applying the `TxDefaultProfile`/`TxProfile` to that transaction, switches to the priority profile, and confirms with `NotifyPriorityCharging` (`activated = true`). If it has no such profile it responds `NoProfile`; if it cannot activate for another reason (e.g. unknown transaction) it responds `Rejected`. The priority profile stays in effect until the session ends or the CSMS deactivates it; the achieved power may still be below station maximum if other limits (e.g. load balancing) apply. Priority charging is not limited to V2X transactions. See the [V2X bidirectional deep-dive](../OCPP-2.1-Bidirectional/OCPP-2.1-Bidirectional.md) for how priority charging suppresses discharging.
+
+**Messages:** [UsePriorityCharging](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#useprioritycharging), [NotifyPriorityCharging](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyprioritycharging)
 
 ### K22 — Requesting priority charging locally
-_(summary pending)_
+New in OCPP 2.1: the same priority-charging switch as [K21](#k21--requesting-priority-charging-remotely), but triggered at the station itself (a button or display) rather than through the CSMS. The station stops applying the `TxDefaultProfile`/`TxProfile` to the transaction, switches to its `PriorityCharging` profile, and informs the CSMS with `NotifyPriorityCharging` (`activated = true`). If the station has no `PriorityCharging` profile it cannot switch. If it is offline when the user activates, it applies the priority profile immediately and queues the `NotifyPriorityCharging` message for when it reconnects. The profile remains active until the session ends or priority charging is cancelled.
+
+**Messages:** [NotifyPriorityCharging](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyprioritycharging)
 
 ### K23 — Smart Charging with EMS connected to Charging Stations
-_(summary pending)_
+New in OCPP 2.1: a worked example of [K11](#k11--set--update-external-charging-limit-with-ongoing-transaction)/[K12](#k12--set--update-external-charging-limit-without-ongoing-transaction) where the External Control System is a building Energy Management System wired directly to each station. The EMS measures other site loads and local generation, computes the power available for charging so the grid connection is not overloaded, and sets a limit (or schedule) on each station over a non-OCPP link. Each station represents this internally as a `ChargingStationExternalConstraints` profile and, when the limit shifts by more than `LimitChangeSignificance`, notifies the CSMS with `NotifyChargingLimit` (`chargingLimitSource = EMS`); an ongoing transaction also gets a transaction event with `triggerReason = ChargingRateChanged`. Requires `ExternalControlSignalsEnabled = true`. The requirements are fully covered by K11 and K12.
+
+**Messages:** [NotifyChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifycharginglimit), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: VENDOR-CONFIG** — The EMS-to-station interface and the site load-management algorithm are deployment decisions outside OCPP.
 
 ### K24 — Smart Charging with EMS connected to Local Controller
-_(summary pending)_
+New in OCPP 2.1: the [K14](#k14--external-charging-limit-with-local-controller) pattern where the External Control System is a building EMS wired to a Local Controller that manages a cluster of stations. The EMS regularly updates a current/power limit for the whole cluster to protect the grid connection; the Local Controller notifies the CSMS, recalculates per-station profiles, and pushes them down. The message flow and requirements are those of K14.
+
+**Messages:** [NotifyChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifycharginglimit), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [ClearedChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#clearedcharginglimit), [ClearChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#clearchargingprofile)
+
+> **ESCALATE: VENDOR-CONFIG** — The EMS-to-Local-Controller interface and the cluster scheduling algorithm are deployment decisions outside OCPP.
 
 ### K25 — Smart Charging with EMS acting as a Local Controller
-_(summary pending)_
+New in OCPP 2.1: the EMS and Local Controller are combined into one component, so all OCPP traffic passes through it. This lets the EMS-part see the full transaction state — schedules imposed by the CSMS, EV state-of-charge, planned departure time — and therefore do more advanced scheduling than an external EMS could. It calculates a power profile per station and sends each as a `ChargingStationMaxProfile` (in addition to any CSMS profiles flowing through it), keeping the grid connection within limits.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
+
+> **ESCALATE: VENDOR-CONFIG** — The combined EMS/Local-Controller scheduling logic and its site-measurement inputs are implementation decisions outside OCPP.
 
 ### K26 — Smart Charging with Hybrid Local & Cloud EMS
-_(summary pending)_
+New in OCPP 2.1: a variant of [K25](#k25--smart-charging-with-ems-acting-as-a-local-controller) where the EMS is split between a cloud instance and a local on-site instance. Two topologies are possible: the cloud part handles scheduling and Local Controller functionality while the local part measures site loads and acts as a fail-safe against grid overload; or the cloud part handles only scheduling while the local part is the Local Controller plus fail-safe. Either way the local component provides the overload protection that a purely cloud-based EMS could not guarantee during connectivity loss. Profiles reach the stations as in K25 (`ChargingStationMaxProfile` via `SetChargingProfile`).
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
+
+> **ESCALATE: VENDOR-CONFIG** — Which functions run in the cloud vs. on-site (the split topology), the inter-component protocol, and the fail-safe logic are deployment/vendor decisions outside OCPP.
 
 ### K27 — Smart Charging with EMS and LocalGeneration
-_(summary pending)_
+New in OCPP 2.1: lets locally generated power (e.g. solar) that the CSMS does not know about be added on top of the normal charging limit. The station represents the generation forecast internally as a `LocalGeneration` charging profile; the effective ceiling becomes the merged limit plus the local-generation capacity (so, for example, a 5 kW `TxDefaultProfile` plus 2 kW of solar allows 7 kW). When the available generation changes by more than `LimitChangeSignificance`, the station notifies the CSMS with `NotifyChargingLimit`, flagging the source as local generation. See [K04](#k04--internal-load-balancing) for how `LocalGeneration` raises the `ChargingStationMaxProfile` ceiling.
+
+**Messages:** [NotifyChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifycharginglimit)
+
+> **ESCALATE: VENDOR-CONFIG** — How the station obtains and forecasts the local-generation schedule (the EMS interface) is a deployment decision outside OCPP.
 
 ### K28 — Dynamic charging profiles from CSMS
-_(summary pending)_
+New in OCPP 2.1: a `Dynamic` charging profile has a single schedule period whose `limit`/`setpoint` can be updated repeatedly without resending the whole profile. Two update modes exist. Push: the CSMS first installs the dynamic profile with `SetChargingProfile` (no `dynUpdateInterval`), then sends new values with `UpdateDynamicSchedule` whenever it wants; the station applies each value and stamps `dynUpdateTime`. Pull: the CSMS installs the profile with a `dynUpdateInterval` (e.g. 60 s), and the station periodically requests fresh values with `PullDynamicScheduleUpdate`, the CSMS returning them in the response. In both modes, if a `duration` is set and no update arrives before it elapses the schedule ends and the station falls back to the next valid profile; with no `duration` the schedule lasts until cleared or replaced. See the [OCPP 2.1 Smart Charging deltas deep-dive](../OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md) for dynamic-profile mechanics.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [UpdateDynamicSchedule](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#updatedynamicschedule), [PullDynamicScheduleUpdate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#pulldynamicscheduleupdate)
 
 ### K29 — Dynamic charging profiles from external system
-_(summary pending)_
+New in OCPP 2.1: a `Dynamic` profile whose `limit`/`setpoint` is updated not by the CSMS but by an external system, signalled with `operationMode = ExternalLimits` or `ExternalSetpoint`. In the first scenario the station itself originates the dynamic profile as a `ChargingStationExternalConstraints` profile fed by the external system, applies each new value as it arrives, and notifies the CSMS via `NotifyChargingLimit` (as in [K11](#k11--set--update-external-charging-limit-with-ongoing-transaction)) when it shifts by more than `LimitChangeSignificance`. In the second, the CSMS pre-authorizes external control by sending a `TxProfile`/`TxDefaultProfile` whose period has `operationMode = ExternalLimits`/`ExternalSetpoint`, telling the station an external system will supply the values; this is the path used when `ExternalConstraintsProfileDisallowed` is true and the station is not permitted to create its own `ChargingStationExternalConstraints` profile. As with [K28](#k28--dynamic-charging-profiles-from-csms), an unrefreshed schedule expires after its `duration` and falls back to the next valid profile.
+
+**Messages:** [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyChargingLimit](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifycharginglimit)
+
+> **ESCALATE: VENDOR-CONFIG** — Whether the station or the CSMS owns the externally driven profile (governed by `ExternalConstraintsProfileDisallowed`) and the external-system interface are deployment/policy decisions.
 
 ---
 

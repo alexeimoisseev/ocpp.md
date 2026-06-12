@@ -51,13 +51,13 @@ OCPP enables interoperability: a charging station from one vendor can be managed
 | OCPP 2.0.1 | Widely deployed | WebSocket + JSON | `ocpp2.0.1` | Bugfix/clarification release of 2.0; current baseline for many deployments |
 | OCPP 2.1 | **Published (Edition 2, 2025)** | WebSocket + JSON | `ocpp2.1` | Superset of 2.0.1. Adds DER control, bidirectional/V2X, tariff & cost, battery swap, periodic event streams, dynamic/priority charging, and ISO 15118-20 |
 
-OCPP 2.1 is a **published standard**, not a work in progress. It is a functional superset of 2.0.1: all 64 of 2.0.1's messages are retained unchanged, and 27 net-new messages are added, for a total of **91 messages**. See [§5 Migration](#5-ocpp-201--21-migration) for the compatibility model.
+OCPP 2.1 is a **published standard**, not a work in progress. It is a functional superset of 2.0.1: all 64 of 2.0.1's messages are retained unchanged, and 27 net-new messages are added, for a total of **91 messages**. See [§6 Migration](#6-ocpp-201--21-migration) for the compatibility model.
 
 ### 1.2 Transport
 
 - **WebSocket** (RFC 6455), normally over TLS (`wss://`).
 - WebSocket subprotocol identifier: **`ocpp2.1`** (per OCPP-J, Part 4).
-- The same JSON-RPC-style message framing as 2.0.1 (CALL / CALLRESULT / CALLERROR — see [§3](#3-message-framing-rpc)). OCPP 2.1 adds the one-way **SEND** message type for periodic event streams (see [§3](#3-message-framing-rpc)).
+- The same JSON-RPC-style message framing as 2.0.1 (CALL / CALLRESULT / CALLERROR — see [§3](#3-message-framing-rpc)). OCPP 2.1 adds **CALLRESULTERROR** (5) for unprocessable CALLRESULT responses and the one-way **SEND** (6) for periodic event streams (see [§3](#3-message-framing-rpc)).
 - The Charging Station opens the connection to the CSMS, typically at a URL like `wss://csms.example.com/ocpp/<charging_station_id>`.
 
 ---
@@ -116,6 +116,7 @@ OCPP 2.1 uses the same JSON-array RPC framing as 2.0.1, plus a new one-way messa
 | 2 | CALL | `[2, "<messageId>", "<action>", {payload}]` | Request; expects a matching CALLRESULT or CALLERROR |
 | 3 | CALLRESULT | `[3, "<messageId>", {payload}]` | Success response, correlated by `messageId` |
 | 4 | CALLERROR | `[4, "<messageId>", "<errorCode>", "<errorDescription>", {details}]` | Error response |
+| 5 | CALLRESULTERROR | `[5, "<messageId>", "<errorCode>", "<errorDescription>", {errorDetails}]` | New in OCPP 2.1 (Part 4). Sent when a received CALLRESULT cannot be processed by the recipient. |
 | 6 | SEND | `[6, "<messageId>", "<action>", {payload}]` | **New in 2.1.** One-way fire-and-forget message; no response is sent. Used by `NotifyPeriodicEventStream` for high-rate telemetry |
 
 Flow rules (unchanged from 2.0.1): at most one CALL may be outstanding per direction at a time; both sides may initiate CALLs independently. SEND messages are not subject to the request/response correlation rule because they carry no response.
@@ -283,7 +284,7 @@ Messages new in 2.1 are flagged **(new)**.
 | [ClearDisplayMessage](./OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#cleardisplaymessage) | CSMS → CS |
 | [NotifyDisplayMessages](./OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#notifydisplaymessages) | CS → CSMS |
 
-> **Note:** In 2.0.1 the `CostUpdated` message lived in the Display block. In 2.1 it is reassigned to Block I (TariffAndCost). See [§5.3](#53-costupdated-reassignment).
+> **Note:** In 2.0.1 the `CostUpdated` message lived in the Display block. In 2.1 it is reassigned to Block I (TariffAndCost). See [§6.3](#63-costupdated-reassignment).
 
 ### Block P — DataTransfer · [schemas](./OCPP-2.1-Schemas/OCPP-2.1-Schemas-DataTransfer.md)
 
@@ -392,7 +393,7 @@ The 27 net-new messages added in 2.1 (64 retained + 27 new = 91 total). All name
 
 ### 6.2 The 4 New Functional Blocks
 
-OCPP 2.0.1 defined 15 functional blocks (A–P, with some letters reused for grouping). OCPP 2.1 adds four new blocks, extending the catalogue to A–S.
+OCPP 2.0.1 defined 15 functional blocks (A–P, with letter I unassigned). OCPP 2.1 fills letter I with the new TariffAndCost block and appends Q, R, S — 19 blocks total.
 
 | Block | Letter | Theme | Messages |
 |-------|--------|-------|----------|
@@ -425,7 +426,7 @@ The CSMS echoes the single subprotocol it selects, e.g. `Sec-WebSocket-Protocol:
 | New messages | — | 27 | Additive — implement only what you need |
 | Functional blocks | A–P (15) | A–S (19) | 4 new blocks; `CostUpdated` moves O → I |
 | Subprotocol | `ocpp2.0.1` | `ocpp2.1` | Negotiate via `Sec-WebSocket-Protocol` |
-| Message types | CALL / CALLRESULT / CALLERROR | + SEND (one-way) | Add SEND handling for periodic event streams |
+| Message types | CALL / CALLRESULT / CALLERROR | + CALLRESULTERROR (5) and SEND (6, one-way) | Add handling for CALLRESULTERROR and SEND (periodic event streams) |
 
 > **ESCALATE:** The brief instructs treating message direction and block membership as PDF-verified and schema-derived, but it does not confirm whether your target CSMS/CS deployment must *also* keep negotiating `ocpp2.0.1`/`ocpp1.6` for a mixed fleet, or move to `ocpp2.1`-only. This is a deployment-policy decision (fleet composition, certification scope) the AI agent cannot infer from the spec. Stop and ask the developer which subprotocols to advertise/accept before changing negotiation code.
 

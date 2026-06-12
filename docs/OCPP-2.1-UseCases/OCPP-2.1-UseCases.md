@@ -1329,14 +1329,30 @@ When a grid anomaly forces the station to deviate from the active charging profi
 
 ## S. Battery Swapping
 
+> Block S models a battery-swap station (BSS) as an ordinary OCPP Charging Station in which each battery slot is a logical EVSE. The swap dialogue (recording which pack went in and which came out) uses the dedicated `BatterySwap`/`RequestBatterySwap` messages, while the subsequent recharging of the returned packs is plain transaction handling. See the swap event ordering walkthrough in the [Sequences deep-dive](../OCPP-2.1-Sequences/OCPP-2.1-Sequences.md).
+
 ### S01 — Battery Swap Local Authorization
-_(summary pending)_
+
+The driver authorizes locally at the swap station by presenting an RFID card; the station sends `Authorize` and, on `idTokenInfo.status = Accepted` (and provided enough charged packs are available), opens or indicates the empty slot(s) into which the depleted pack(s) can be inserted. This mirrors ordinary RFID authorization (use case C01), except that the authorization does not start a transaction, so C01's transaction-in-progress rules do not apply. If the driver fails to insert a battery before the `BatterySwapInTimeout` expires, the station ends the authorization and aborts the swap (no `BatterySwap` message having been sent yet); if too few charged packs are on hand, the swap is refused.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize)
 
 ### S02 — Battery Swap Remote Start
-_(summary pending)_
+
+The remote-initiated counterpart of S01: the driver triggers the swap from a smartphone app (e.g. scanning a QR code), and the CSMS — having authorized the token — sends `RequestBatterySwap` carrying the `idToken` and a `requestId`. If enough charged packs are available the station answers `Accepted`; otherwise it returns `Rejected` with `reasonCode = NoBatteryAvailable`. The `requestId` from this request must be reused in the `BatterySwap` events that follow (S03), letting the CSMS correlate the swap with its originating request. As in S01, failure to insert a pack before `BatterySwapInTimeout` aborts the process.
+
+**Messages:** [RequestBatterySwap](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#requestbatteryswap), [BatterySwap](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap)
 
 ### S03 — Battery Swap In/Out
-_(summary pending)_
+
+This use case records the physical exchange. In the default In-Out order the driver (or swapping machinery) first inserts the depleted pack(s) into empty slot(s), and the station sends `BatterySwap` with `eventType = BatteryIn`, the shared `requestId`, the authorized `idToken`, and a `batteryData` entry per pack (slot `evseId`, `serialNumber`, `SoC`, `SoH`); it then reports each slot's connector as `Occupied` via `NotifyEvent`. The station then offers charged pack(s); when the driver takes them out the station sends a second `BatterySwap` with `eventType = BatteryOut`, the same `requestId` and the data of the extracted pack(s), and reports those slots `Available`. If a charged pack offered after the BatteryIn is not collected within `BatterySwapOutTimeout`, the station sends a `BatterySwap` with `eventType = BatteryOutTimeout` so the CSMS does not retain an orphan BatteryIn with no matching BatteryOut. A station that swaps in the reverse order reports `BatterySwapCtrlr.SwapOrder = Out-In`. The `BatterySwapResponse` has no rejection status, so a CSMS that needs to reject an inserted pack must use the `org.openchargealliance.batteryswapresponse` customData extension.
+
+**Messages:** [BatterySwap](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: VENDOR-EXTENSION** — Rejecting an inserted battery requires the bilateral `org.openchargealliance.batteryswapresponse` customData extension (reason codes such as `BatterySoHLow`, `BatteryDamaged`, `BatteryUnknown`); whether a station implements it is a vendor decision flagged via `CustomizationCtrlr.CustomImplementationEnabled`.
 
 ### S04 — Battery Swap Charging
-_(summary pending)_
+
+After a depleted pack is inserted, the station recharges it as a normal transaction on that slot's logical EVSE. With `TxStartPoint`/`TxStopPoint` configured to `EVConnected`, inserting the pack opens a transaction: `TransactionEvent` with `eventType = Started`, `triggerReason = CablePluggedIn` (meaning the pack was inserted) and either the predefined `BatterySwapIdtoken` (type `Central`) or an empty token (type `NoAuthorization`). The station then sends periodic `TransactionEvent` updates carrying the battery's `SoC` measurand; the pack becomes eligible for swapping at `BatterySwapTargetSoc` and, on reaching `BatterySwapMaxSoc` (which must be ≥ the target), the station suspends energy transfer with `chargingState = SuspendedEVSE` and `triggerReason = EnergyLimitReached`, keeping the transaction alive so charging can resume (e.g. for V2X). Removing the pack ends the transaction (`eventType = Ended`, `stoppedReason = EVDisconnected`). After a reboot the station restarts transactions for every slot still holding a battery. These transaction messages are not tied to the driver's idToken.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)

@@ -50,62 +50,142 @@ Each catalog entry below will list:
 ## A. Security
 
 ### A01 — Update Charging Station Password for HTTP Basic Authentication
-_(summary pending)_
+
+> **Deprecated in OCPP 2.1.** Use B09 (Setting a new NetworkConnectionProfile) instead to manage the `BasicAuthPassword`. This use case remains for backwards compatibility with OCPP 1.6 deployments using Security Profile 1 or 2.
+
+The CSMS remotely rotates the HTTP Basic Authentication password stored in the `BasicAuthPassword` configuration variable on the Charging Station. The CSMS sends a `SetVariablesRequest` targeting `SecurityCtrlr.BasicAuthPassword`; on an `Accepted` response the Charging Station disconnects and reconnects using the new credential. If the Charging Station responds with any status other than `Accepted`, the old credentials remain active and the CSMS must continue accepting them.
+
+> **ESCALATE: POLICY-DEPENDENT** — The CSO must decide the password rotation policy: frequency, entropy requirements, and whether to accept the old credential for a grace period after a rotation failure.
+
+**Messages:** [SetVariables](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#setvariables) (CSMS → CS)
 
 ### A02 — Update Charging Station Certificate by request of CSMS
-_(summary pending)_
+
+The CSMS initiates a certificate renewal by sending a `TriggerMessageRequest` with `requestedMessage = SignChargingStationCertificate` (or `SignV2GCertificate` / `SignV2G20Certificate` for ISO 15118 certificates). The Charging Station responds by generating a new key pair, creating a Certificate Signing Request (CSR), and sending it to the CSMS via `SignCertificateRequest`. The CSMS (or a connected Certificate Authority) signs the certificate and delivers it back with `CertificateSignedRequest`. If the Charging Station has per-EVSE ISO15118Ctrlr components, the CSMS must trigger and process one CSR per EVSE.
+
+> **ESCALATE: POLICY-DEPENDENT** — The CSO must decide which Certificate Authority signs the certificate, the certificate validity period, and whether to require an immediate reconnect after installation to validate the new credential.
+
+**Messages:** [TriggerMessage](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#triggermessage) (CSMS → CS), [SignCertificate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#signcertificate) (CS → CSMS), [CertificateSigned](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#certificatesigned) (CSMS → CS)
 
 ### A03 — Update Charging Station Certificate initiated by the Charging Station
-_(summary pending)_
+
+The Charging Station autonomously detects that its certificate is approaching expiry and self-initiates the renewal flow without waiting for a CSMS trigger. It generates a new key pair, constructs a CSR, and sends `SignCertificateRequest` to the CSMS. The CSMS (or its CA) signs and returns the certificate via `CertificateSignedRequest`. This use case differs from A02 only in who starts the flow: the Charging Station acts proactively rather than reactively.
+
+> **ESCALATE: POLICY-DEPENDENT** — The CSO must decide the threshold (days before expiry) at which the Charging Station should self-trigger renewal, and whether an expired-certificate connection should be accepted in Pending state to allow certificate refresh.
+
+**Messages:** [SignCertificate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#signcertificate) (CS → CSMS), [CertificateSigned](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#certificatesigned) (CSMS → CS)
 
 ### A04 — Security Event Notification
-_(summary pending)_
+
+When the Charging Station detects a security-relevant condition — such as an invalid TLS certificate, a tamper attempt, an invalid firmware signature, or a connection attempt using an unknown security profile — it sends a `SecurityEventNotificationRequest` to the CSMS. The notification carries the event type (a well-known string from the security events list) and an optional `techInfo` field for additional diagnostic detail. The CSMS acknowledges with an empty response. Critical events (such as `InvalidTLSVersion`) that occur before a connection is established must be queued locally and sent once connectivity is restored.
+
+**Messages:** [SecurityEventNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Security.md#securityeventnotification) (CS → CSMS)
 
 ### A05 — Upgrade Charging Station Security Profile
-_(summary pending)_
+
+The CSMS upgrades a Charging Station from a lower security profile to a higher one (e.g. Profile 1 to Profile 2, or Profile 2 to Profile 3) without interrupting normal operation. The process involves writing the new network credentials or certificates via `SetVariablesRequest`, then triggering a `ResetRequest` so the Charging Station reconnects using the new security profile. On reconnect, the Charging Station sends `BootNotificationRequest` and the CSMS verifies the new profile is active. Downgrade to a lower profile is rejected unless `AllowSecurityProfileDowngrade` is explicitly set to `true`.
+
+> **ESCALATE: POLICY-DEPENDENT** — The CSO must decide whether to allow security profile downgrade (`AllowSecurityProfileDowngrade`), the reset type (Immediate vs. OnIdle), and whether to place the Charging Station in Pending state during the transition.
+
+**Messages:** [SetVariables](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#setvariables) (CSMS → CS), [Reset](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#reset) (CSMS → CS), [BootNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#bootnotification) (CS → CSMS)
 
 ---
 
 ## B. Provisioning
 
 ### B01 — Cold Boot Charging Station
-_(summary pending)_
+
+When a Charging Station powers on and has no reason to believe the CSMS is withholding acceptance, it sends `BootNotificationRequest` and expects an `Accepted` response containing the current time and the heartbeat interval. The Charging Station then sends a `Heartbeat` on the configured interval to keep the connection alive and synchronize its clock. If the offline period before reconnect exceeded the `OfflineThreshold` configuration variable, the Charging Station also sends `NotifyEventRequest` with `variable.name = AvailabilityState` for every connector; otherwise it only sends `NotifyEvent` for connectors whose state changed while offline.
+
+**Messages:** [BootNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#bootnotification) (CS → CSMS), [Heartbeat](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#heartbeat) (CS → CSMS), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent) (CS → CSMS)
 
 ### B02 — Cold Boot Charging Station - Pending
-_(summary pending)_
+
+The CSMS responds to `BootNotificationRequest` with status `Pending` when it needs to perform provisioning steps — such as pushing configuration variables or a new certificate — before the Charging Station is allowed to serve drivers. The Charging Station must continue sending `BootNotificationRequest` at the retry interval provided in the response. While in `Pending` state the CSMS may exchange `GetVariables`, `SetVariables`, and other provisioning messages. Once the CSMS completes provisioning it replies to a subsequent `BootNotificationRequest` with `Accepted`.
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must decide which provisioning steps (configuration push, certificate update, firmware check) are mandatory before moving from Pending to Accepted.
+
+**Messages:** [BootNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#bootnotification) (CS → CSMS), [GetVariables](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#getvariables) (CSMS → CS), [SetVariables](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#setvariables) (CSMS → CS)
 
 ### B03 — Cold Boot Charging Station - Rejected
-_(summary pending)_
+
+The CSMS responds to `BootNotificationRequest` with status `Rejected` when it does not recognize the Charging Station or its credentials are invalid. The response includes a retry interval; the Charging Station must wait at least that interval before attempting another `BootNotificationRequest`. The Charging Station is not authorized to perform any charging operations while in the rejected state.
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must define the conditions under which a boot is rejected (unknown serial number, invalid certificate, provisioning not yet complete) and whether an alert should be raised for persistent rejection.
+
+**Messages:** [BootNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#bootnotification) (CS → CSMS)
 
 ### B04 — Offline Behavior Idle Charging Station
-_(summary pending)_
+
+When CSMS connectivity is lost, the Charging Station continues to operate stand-alone. On reconnection, if the offline period exceeded the `OfflineThreshold` configuration variable, the Charging Station sends `NotifyEventRequest` with `variable.name = AvailabilityState` for every connector to allow the CSMS to reconstruct the full state. If the offline period was shorter than the threshold, only connectors whose `AvailabilityState` changed during the offline period are reported. The Charging Station then resumes sending `Heartbeat` messages as normal.
+
+**Messages:** [Heartbeat](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#heartbeat) (CS → CSMS), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent) (CS → CSMS)
 
 ### B05 — Set Variables
-_(summary pending)_
+
+The CSMS writes one or more Device Model variable values to the Charging Station in a single `SetVariablesRequest`. Each element specifies a `component`, `variable`, optional `attributeType` (defaulting to `Actual`), and the new value. The Charging Station evaluates each element independently and returns a `SetVariablesResponse` with one `SetVariableResult` per element, using status codes `Accepted`, `Rejected`, `UnknownComponent`, `UnknownVariable`, or `NotSupportedAttributeType`. The CSMS must not exceed the `ItemsPerMessageSetVariables` limit per request.
+
+**Messages:** [SetVariables](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#setvariables) (CSMS → CS)
 
 ### B06 — Get Variables
-_(summary pending)_
+
+The CSMS retrieves the current value of one or more Device Model variables from the Charging Station. The `GetVariablesRequest` carries a list of `GetVariableData` elements, each identifying a component, variable, and optional `attributeType`. The Charging Station returns a `GetVariablesResponse` with one `GetVariableResult` per requested element. Variables with status `WriteOnly` are returned with status `Rejected` and no value. The CSMS must not request more elements in a single call than the `ItemsPerMessageGetVariables` limit allows.
+
+**Messages:** [GetVariables](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#getvariables) (CSMS → CS)
 
 ### B07 — Get Base Report
-_(summary pending)_
+
+The CSMS requests a predefined report from the Charging Station by sending `GetBaseReportRequest` with a `reportBase` type: `ConfigurationInventory` (all operator-settable variables and their characteristics), `FullInventory` (all component-variables including characteristics), or `SummaryInventory` (availability and problem state of the station, EVSEs, and connectors). The Charging Station acknowledges immediately with `GetBaseReportResponse` and then asynchronously streams the results in one or more `NotifyReportRequest` messages, each acknowledged by the CSMS with `NotifyReportResponse`. The `tbc` (to be continued) flag is `true` in all but the last part.
+
+**Messages:** [GetBaseReport](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#getbasereport) (CSMS → CS), [NotifyReport](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#notifyreport) (CS → CSMS)
 
 ### B08 — Get Custom Report
-_(summary pending)_
+
+The CSMS requests a filtered report by sending `GetReportRequest` with optional `componentCriteria` (a list of criteria from: `Active`, `Available`, `Enabled`, `Problem`) and/or a list of specific `componentVariables`. The Charging Station returns only components matching at least one criterion (logical OR). The results are streamed asynchronously as `NotifyReportRequest` messages. If the filter combination yields an empty result set, the Charging Station responds with `status = EmptyResultSet`. Multiple criteria are OR-combined, not AND-combined.
+
+**Messages:** [GetReport](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#getreport) (CSMS → CS), [NotifyReport](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#notifyreport) (CS → CSMS)
 
 ### B09 — Setting a new NetworkConnectionProfile
-_(summary pending)_
+
+> **Updated in OCPP 2.1.** The `SetNetworkProfileRequest` method is deprecated and may be removed in a future release. The preferred OCPP 2.1 method is to write `NetworkConfiguration` component variables directly via `SetVariablesRequest`.
+
+The CSMS updates the network connection parameters for a specific configuration slot on the Charging Station. The slot number must appear in the `valuesList` of the `NetworkConfigurationPriority` variable. In the legacy flow, the CSMS sends `SetNetworkProfileRequest` and the Charging Station stores the new profile and replies `Accepted`. In the new Device Model flow, the CSMS first removes the target slot from `NetworkConfigurationPriority` via `SetVariablesRequest`, then writes individual `NetworkConfiguration` component variables (instance = slot number), ensuring the station cannot attempt to connect using an incomplete configuration.
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must decide: which configuration slot to write, whether to use the deprecated `SetNetworkProfile` or the new `SetVariables` path, and whether to immediately trigger a reconnect after updating the active profile.
+
+**Messages:** [SetNetworkProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#setnetworkprofile) (CSMS → CS, deprecated), [SetVariables](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#setvariables) (CSMS → CS, preferred)
 
 ### B10 — Migrate to new CSMS
-_(summary pending)_
+
+The CSMS pushes a new network connection profile (using B09) pointing to the new CSMS endpoint, then resets the Charging Station so it reconnects to the new CSMS. The Charging Station reconnects using the newly configured profile, sends `BootNotificationRequest` to the new CSMS, and completes the transition. If the new CSMS rejects the connection, the Charging Station falls back to the next slot in `NetworkConfigurationPriority`, which should still point to the original CSMS. Errors during the B09 step are non-destructive to the current active connection because the slot being written must not be in the active priority list.
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must coordinate the cutover timing between old and new CSMS, decide the fallback slot configuration, and confirm the new CSMS is ready to accept the station's `BootNotification` before triggering the reset.
+
+**Messages:** [SetNetworkProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#setnetworkprofile) (CSMS → CS) or [SetVariables](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#setvariables) (CSMS → CS), [Reset](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#reset) (CSMS → CS), [BootNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#bootnotification) (CS → new CSMS)
 
 ### B11 — Reset - Without Ongoing Transaction
-_(summary pending)_
+
+The CSMS instructs the Charging Station to restart when no transaction is in progress. The `ResetRequest` carries a `type` of `Immediate` (restart as soon as possible) or `OnIdle` (wait until all connectors are idle). The Charging Station acknowledges with `ResetResponse` (status `Accepted` or `Rejected`), performs the restart, and sends `BootNotificationRequest` on reconnection. An `Immediate` reset must be acted upon without waiting for a user to unplug.
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must choose the reset type (`Immediate` vs. `OnIdle`) and whether to apply the reset to a specific EVSE or the entire Charging Station.
+
+**Messages:** [Reset](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#reset) (CSMS → CS), [BootNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#bootnotification) (CS → CSMS)
 
 ### B12 — Reset - With Ongoing Transaction
-_(summary pending)_
+
+The CSMS issues a `ResetRequest` while one or more transactions are active. For an `Immediate` reset, the Charging Station stops active transactions, sends the final transaction-related messages, then restarts. For an `OnIdle` reset, the Charging Station marks itself as unavailable for new transactions and waits until all current transactions end before restarting. The Charging Station must not start new transactions once an `OnIdle` reset has been accepted. After restart it sends `BootNotificationRequest`.
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must decide whether to accept the risk of abruptly ending transactions (Immediate) or delay the reset until idle (OnIdle), and how to handle EV drivers who are mid-session.
+
+**Messages:** [Reset](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#reset) (CSMS → CS), [BootNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#bootnotification) (CS → CSMS)
 
 ### B13 — Reset - With Ongoing Transaction - Resuming Transaction
-_(summary pending)_
+
+A variant of B12 in which the Charging Station is configured to resume interrupted transactions after reboot (the `ResumeTransaction` capability is supported). When the reset occurs mid-transaction, the Charging Station stores enough state to reconstruct the session. After restarting and sending `BootNotificationRequest`, if the EV is still connected, the Charging Station resumes the transaction without requiring a new authorization. The CSMS receives the continuation as part of the same transaction ID.
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must decide whether transaction resumption is enabled, what the maximum allowed interruption duration is before the transaction is treated as ended, and whether the driver needs to re-authorize after a reboot.
+
+**Messages:** [Reset](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#reset) (CSMS → CS), [BootNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#bootnotification) (CS → CSMS)
 
 ---
 

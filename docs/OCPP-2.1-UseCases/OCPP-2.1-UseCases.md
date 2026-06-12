@@ -762,13 +762,25 @@ New in OCPP 2.1: when local cost calculation is active, the Charging Station pro
 ## J. Meter Values
 
 ### J01 — Sending Meter Values not related to a transaction
-_(summary pending)_
+The Charging Station samples its energy meter or other sensors and sends those readings to the CSMS outside of any transaction, using the dedicated MeterValues message. Clock-aligned readings (taken at fixed wall-clock intervals such as every quarter hour, configured via `AlignedDataCtrlr`) and standalone diagnostic samples both travel this way. Each reading carries a timestamp and one or more sampled values, optionally tagged with measurand, context, location and phase; signed meter values can be included for fiscally certified meters. When an EVSE is in a transaction its clock-aligned values are sent inside transaction events instead, and `AlignedDataSendDuringIdle` can restrict aligned values to idle periods only.
+
+**Messages:** [MeterValues](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-MeterValues.md#metervalues)
+
+> **ESCALATE: VENDOR-CONFIG** — Which measurands are sampled, at what interval, at which locations/phases, and whether upstream (potentially privacy-sensitive) measurands are reported are deployment configuration choices; upstream measurands may require an explicit agreement due to data-protection and liability implications.
 
 ### J02 — Sending transaction related Meter Values
-_(summary pending)_
+During an ongoing transaction the Charging Station samples metering data and offloads it to the CSMS inside transaction-event updates rather than standalone MeterValues messages. The measurands and sampling interval are configured through `SampledDataCtrlr` (`TxUpdatedMeasurands` / `TxUpdatedInterval`). All meter values reported must relate to the EVSE on which the transaction runs, and register values must increase monotonically and be read directly from the meter (not re-based to zero per transaction) so the CSMS can audit for missing energy between sessions. If the station is offline it queues these messages; if it is offline and low on memory it may drop intermediate updates first, never breaking the queue order. Signed meter values can be attached when supported.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: VENDOR-CONFIG** — The set of transaction measurands and the sampling interval, plus the behaviour when memory is constrained, are deployment configuration decisions; the fiscal-meter register values themselves may carry billing/legal-metrology obligations.
 
 ### J03 — Charging Loop with metering information exchange
-_(summary pending)_
+This use case maps the ISO 15118 metering loop onto OCPP. During AC or DC charging the EV requests metering status from the Charging Station, which returns fiscal-meter readings (with a signed meter reading where required), and the EV acknowledges receipt with a MeteringReceipt message. The Charging Station does not forward that ISO 15118 receipt to the CSMS directly; instead it reports the signed meter values to the CSMS as ordinary transaction-related meter values exactly as in [J02 — Sending transaction related Meter Values](#j02--sending-transaction-related-meter-values). A station may, as an implementation choice, require an EV MeteringReceipt to acknowledge each fiscal reading before it is forwarded.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: VENDOR-CONFIG** — Whether the Charging Station mandates an ISO 15118 MeteringReceipt acknowledgement from the EV before forwarding each fiscal meter value is a vendor/operator implementation decision, not fixed by OCPP.
 
 ---
 

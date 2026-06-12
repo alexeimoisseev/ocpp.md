@@ -674,40 +674,88 @@ If the reservation expires before the reserved driver shows up, the charging sta
 ## I. Tariff And Cost
 
 ### I01 — Show EV Driver-specific Tariff Information
-_(summary pending)_
+Before a transaction starts, the EV Driver presents an identification token and the Charging Station authorizes it with the CSMS. When the CSMS recognizes the driver it can attach a human-readable, driver-specific tariff description to the authorization result, which the Charging Station then displays so the driver knows the price before committing to charge. This use case only covers showing a textual representation of the tariff; it does not require the Charging Station to support the structured `TariffType` used for local cost calculation. See [Tariff And Cost deep-dive](../OCPP-2.1-TariffCost/OCPP-2.1-TariffCost.md) for how this fits the central- versus local-calculation split.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize)
+
+> **ESCALATE: OPERATOR-POLICY** — The wording, language(s), currency formatting and level of detail of the driver-facing tariff text, and whether the same message is shown to every token, are commercial/UX decisions the operator must define; the protocol only carries the free-text personal message.
 
 ### I02 — Show EV Driver Running Total Cost During Charging
-_(summary pending)_
+While a transaction is in progress, the driver wants to see the accumulating cost. With central cost calculation the CSMS owns the running total and pushes periodic updates to the Charging Station via CostUpdated, or returns the running cost in the response to a transaction event the station already sends. The Charging Station then renders that figure on its display. The update frequency is a trade-off: more frequent updates give a smoother display but generate more traffic and mobile-data cost.
+
+**Messages:** [CostUpdated](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#costupdated), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: OPERATOR-POLICY** — How often the CSMS recomputes and pushes the running total (the update interval) balances display freshness against messaging cost and is an operator deployment decision, not fixed by the protocol.
 
 ### I03 — Show EV Driver Final Total Cost After Charging
-_(summary pending)_
+When the driver stops the transaction, the Charging Station reports the end event to the CSMS, which returns the final total cost in its response. The Charging Station displays that figure so the driver sees the final price before leaving. A free transaction is signalled by a total cost of exactly 0.00 — omitting the cost does not mean free. If the station was offline at stop time, or the stop model requires the driver to physically leave (parking-bay occupancy) before the transaction ends, there may be no display opportunity; see [I05 — Show Fallback Total Cost Message](#i05--show-fallback-total-cost-message).
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: OPERATOR-POLICY** — Whether and how the final cost is surfaced (on-station display, app, email receipt), and the settlement/refund handling for the figure shown, are operator commercial decisions; OCPP only delivers the computed total.
 
 ### I04 — Show Fallback Tariff Information
-_(summary pending)_
+When the Charging Station cannot obtain a driver-specific tariff before charging — for example it is offline, or the CSMS returns no tariff for the token — it falls back to a generic message configured locally in `TariffFallbackMessage`. This gives the driver at least some price indication instead of nothing. The fallback text can be set or updated by the CSMS through that configuration variable. This is the degraded-mode counterpart to [I01 — Show EV Driver-specific Tariff Information](#i01--show-ev-driver-specific-tariff-information).
+
+**Messages:** No dedicated message.
+
+> **ESCALATE: OPERATOR-POLICY** — The content of the fallback tariff message (and whether a generic price is even advertised when the real tariff is unknown) is a commercial/regulatory decision; advertising a price the operator cannot guarantee may carry consumer-protection implications.
 
 ### I05 — Show Fallback Total Cost Message
-_(summary pending)_
+When a transaction is stopped while the Charging Station is offline, the station cannot retrieve the final total cost from the CSMS. Instead of leaving the driver with no information it shows a pre-configured fallback message from `TotalCostFallbackMessage`. This is the offline counterpart to [I03 — Show EV Driver Final Total Cost After Charging](#i03--show-ev-driver-final-total-cost-after-charging). The fallback text can be configured by the CSMS via that configuration variable.
+
+**Messages:** No dedicated message.
+
+> **ESCALATE: OPERATOR-POLICY** — The wording of the offline total-cost fallback message, and how the driver later obtains the actual billed amount once the station reconnects, are operator decisions outside the protocol.
 
 ### I06 — Update Tariff Information During Transaction
-_(summary pending)_
+Some tariffs vary during a session — for example DC fast charging priced against a moving day-ahead energy price, often quoted as a range with a current value. As the Charging Station sends its periodic transaction-event updates, the CSMS checks whether newer tariff text is available and returns it in the response (in the personal-message fields, optionally in several languages), which the station then displays. Note that local regulation or contract terms may forbid changing the advertised tariff mid-session, in which case no update should be sent.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: REGULATORY** — Whether the tariff communicated at session start may change during the transaction, and under what disclosure conditions, is governed by local consumer-protection law and the operator's contract terms, not by OCPP.
 
 ### I07 — Local Cost Calculation - Set Default Tariff
-_(summary pending)_
+New in OCPP 2.1: the CSMS installs a structured tariff on the Charging Station so the station can calculate cost locally. SetDefaultTariff with `evseId = 0` installs the tariff on every EVSE; a non-zero `evseId` targets one EVSE and overrides the station-wide default there. Each tariff carries a unique `tariffId`, so updating a default means installing a new tariff (optionally with a future `validFrom` so it activates at a scheduled time and replaces the prior default). Only one tariff structure fits per message because tariffs can be large. See the [Tariff And Cost deep-dive](../OCPP-2.1-TariffCost/OCPP-2.1-TariffCost.md) for the tariff structure and the `validFrom` activation rules.
+
+**Messages:** [SetDefaultTariff](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#setdefaulttariff)
+
+> **ESCALATE: OPERATOR-POLICY** — The actual prices, currency, tax rates, time-of-day conditions and fixed/idle fees in the default tariff are commercial and tax-jurisdiction values the operator must supply; the protocol only transports the structure.
 
 ### I08 — Local Cost Calculation - Receive Driver Tariff
-_(summary pending)_
+New in OCPP 2.1: instead of (or on top of) the default tariff, the CSMS can return a driver-specific tariff inside the authorization result, which the Charging Station then uses for local cost calculation of that driver's transaction. The driver-specific tariff is "in use" from when it is received until the transaction for that token ends. If the driver does not accept the tariff the station deauthorizes; if the station receives a tariff it cannot process, the configured `HandleFailedTariff` strategy decides whether to refuse charging, fall back to the default tariff, or defer to central calculation by the CSMS. A driver-specific tariff may also arrive via [I11 — Local Cost Calculation - Change transaction tariff](#i11--local-cost-calculation---change-transaction-tariff).
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: OPERATOR-POLICY** — The `HandleFailedTariff` behaviour (deauthorize, use default, or central cost) and whether implicit tariff acceptance (e.g. plugging in the cable) is treated as consent are operator/regulatory choices the deployment must set.
 
 ### I09 — Local Cost Calculation - Get Tariffs
-_(summary pending)_
+New in OCPP 2.1: the CSMS queries which tariffs are currently present on a Charging Station. GetTariffs with `evseId = 0` returns the tariffs across all EVSEs; a non-zero `evseId` scopes the result to one EVSE. The response lists tariff assignments per EVSE, distinguishing default tariffs (installed on every EVSE) from driver-specific tariffs (tied to a token, and reported with the EVSE where a transaction is active). If nothing matches, the station replies with status `NoTariff`.
+
+**Messages:** [GetTariffs](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#gettariffs)
+
+> **ESCALATE: NONE** — Diagnostic/read-only query; no operator policy decision is required.
 
 ### I10 — Local Cost Calculation - Clear Tariffs
-_(summary pending)_
+New in OCPP 2.1: the CSMS removes one or more default tariffs from a Charging Station. ClearTariffs can target specific `tariffIds`, a specific `evseId`, both, or neither (clear all). Driver-specific tariffs are not cleared by this message — they are removed automatically when no longer in use. A default tariff that is currently in use by an active transaction is reported as cleared but continues to be applied until that transaction ends, so running sessions are never disrupted.
+
+**Messages:** [ClearTariffs](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#cleartariffs)
+
+> **ESCALATE: NONE** — Tariff lifecycle management; the protocol fully specifies the clearing and in-use behaviour, so no policy decision is left open.
 
 ### I11 — Local Cost Calculation - Change transaction tariff
-_(summary pending)_
+New in OCPP 2.1: the CSMS swaps the tariff associated with an ongoing transaction, for example to handle an unexpected price change. ChangeTransactionTariff targets a `transactionId` (the change is bound to the transaction, not the driver, since the same driver may have other sessions that should not change). The station validates the new tariff and may reject with reasons such as `TooManyElements`, `ConditionNotSupported`, `NoCurrencyChange` (currency cannot switch mid-transaction) or `TxNotFound`. On acceptance the new tariff applies from that moment forward with no retroactive recalculation, and the station emits a transaction event marking the change.
+
+**Messages:** [ChangeTransactionTariff](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#changetransactiontariff), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: REGULATORY** — Whether a tariff may be changed during an active transaction at all, and whether explicit customer agreement is required first, depends on local legislation and contract terms outside OCPP.
 
 ### I12 — Local Cost Calculation - Cost Details of Transaction
-_(summary pending)_
+New in OCPP 2.1: when local cost calculation is active, the Charging Station produces a detailed cost breakdown and returns it to the CSMS so the CSMS can generate invoices or Charge Detail Records. During the session the station may send running cost updates (without per-period detail, to limit data); when the transaction ends it includes a full breakdown in the end event — a list of charging periods (one per pricing change), per-dimension totals for fixed fee, energy, charging time, idle time and reservation, and the overall total with tax handling (stacked tax rates, optional min/max cost capping). If the station cannot compute the cost it flags the failure rather than reporting a wrong figure. See the [Tariff And Cost deep-dive](../OCPP-2.1-TariffCost/OCPP-2.1-TariffCost.md) for the CostDetails structure and the tax-stacking and min/max rules.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: REGULATORY** — Tax-rate stacking (e.g. energy tax then VAT), invoice/CDR formatting and the legal validity of the locally calculated breakdown for billing are jurisdiction-specific decisions the operator and its tax advisor must make; OCPP only carries the numbers.
 
 ---
 

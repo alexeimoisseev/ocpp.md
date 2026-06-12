@@ -8,7 +8,7 @@
 
 ## How This Document Was Produced
 
-This document covers OCPP 2.1 functional block I (Tariff And Cost, use cases I01–I11 of the Part 2 specification) and the payment/settlement use cases of block C (C20–C25). Its dominant confidence tier is **spec-knowledge** — behavioral rules summarized in original wording from the OCPP 2.1 Edition 2 Part 2 specification. Message names, field names, enum values, and structural constraints are **schema-derived** — cross-referenced against the [TariffAndCost schema reference](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md), the [data types reference](../OCPP-2.1-DataTypes.md), and the [enumerations reference](../OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md), all mechanically extracted from the official OCA artifacts. No spec prose is reproduced verbatim (the OCA specification is CC BY-ND licensed); all explanatory text is original.
+This document covers the tariff, cost, settlement, and payment functionality of OCPP 2.1 functional block I (Tariff And Cost, use cases I01–I12) together with the related ad-hoc/web payment use cases C18–C25 in block C; per-use-case detail lives in the use-case catalog. Its dominant confidence tier is **spec-knowledge** — behavioral rules summarized in original wording from the OCPP 2.1 Edition 2 Part 2 specification. Message names, field names, enum values, and structural constraints are **schema-derived** — cross-referenced against the [TariffAndCost schema reference](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md), the [data types reference](../OCPP-2.1-DataTypes.md), and the [enumerations reference](../OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md), all mechanically extracted from the official OCA artifacts. No spec prose is reproduced verbatim (the OCA specification is CC BY-ND licensed); all explanatory text is original.
 
 This document contains **6 escalation points** marked with `> **ESCALATE:**`. They are all `POLICY-DEPENDENT` — actual tariff values, VAT rates, payment-provider choices, and settlement policies are business/operator/regulatory decisions. When an AI agent encounters one, it MUST stop and ask the developer (or the commercial/finance/regulatory stakeholder) to make the decision. See [METHODOLOGY.md](../METHODOLOGY.md) for the full confidence and escalation model.
 
@@ -201,7 +201,7 @@ If the station **cannot process** a received driver tariff, `TariffCostCtrlr.Han
 | `HandleFailedTariff` value | Station behavior |
 |----------------------------|------------------|
 | `Deauthorize` | Do not authorize the idToken for charging |
-| `UseDefault` | Authorize and use the installed default tariff |
+| `UseDefaultTariff` | Authorize and use the installed default tariff (spec prose inconsistently writes `UseDefault` in one requirement) |
 | `CentralCost` | Authorize, do **not** do local cost calculation — CSMS calculates cost centrally (as in I02/I03) |
 
 On a processing failure the station also sets `TariffCostCtrlr.Problem` = true and notifies the CSMS via `NotifyEventRequest` (and clears it to false on the next successful tariff).
@@ -251,7 +251,7 @@ When a transaction starts for an idToken: if a driver tariff was received it is 
 |-----------|----------|----------|
 | No driver-specific tariff available / station offline at authorization | `TariffCostCtrlr.TariffFallbackMessage` | I04 — Show Fallback Tariff Information |
 | Station offline at transaction end, cannot retrieve total cost | `TariffCostCtrlr.TotalCostFallbackMessage` | I05 — Show Fallback Total Cost Message |
-| Station offline (tariff fallback) | `TariffCostCtrlr.OfflineTariffFallbackMessage` | (offline tariff display) |
+| Station offline (tariff fallback) | `TariffCostCtrlr.OfflineTariffFallbackMessage` | (device-model config) |
 
 These are messages shown to the driver, not tariffs used for calculation.
 
@@ -265,13 +265,15 @@ Before a transaction, the EV driver-specific tariff can be shown via the `idToke
 
 ### 5.2 Running cost during a transaction (use case I02)
 
-Two mechanisms, both CSMS-driven for **central** calculation:
+Two mechanisms, both CSMS-driven for **central** calculation.
+
+Push model:
 
 | Step | Sender → Receiver | Message | Trigger / Notes |
 |------|-------------------|---------|-----------------|
-| A1 | CSMS → CS | `CostUpdated` (`totalCost`, `transactionId`) | Pushed every Y seconds; `totalCost` includes taxes, in the station's `Currency` |
-| A2 | CS → CSMS | `CostUpdatedResponse` | Empty `{}` |
-| A3 | CS → EV Driver | (display) | Station shows current total |
+| 1 | CSMS → CS | `CostUpdated` (`totalCost`, `transactionId`) | Pushed at the interval configured by `TariffCostCtrlr.Interval[Cost]`; `totalCost` includes taxes, in the station's `Currency` |
+| 2 | CS → CSMS | `CostUpdatedResponse` | Empty `{}` |
+| 3 | CS → EV Driver | (display) | Station shows current total |
 
 Alternative: when the station sends a `TransactionEventRequest` with `eventType = Updated`, the CSMS returns the running cost in the `totalCost` field of `TransactionEventResponse`.
 
@@ -338,9 +340,14 @@ After an ad-hoc transaction ends, the cost is settled and the station reports th
 
 Who provides the receipt depends on config: with `ReceiptByCSMS = true` the CSMS returns `receiptUrl` in the response; with `ReceiptByCSMS = false` the station puts the terminal's receipt URL into `receiptUrl`/`receiptId` of the request. With `SettlementByCSMS = true`, settlement happens CSMS↔PSP directly and there may be no receipt feedback to the driver (the operator must offer a website/app to retrieve it).
 
-### 6.2 Settlement canceled before any cost — `NotifySettlement` status `Canceled` (use case C20)
+### 6.2 Settlement canceled before any cost — `NotifySettlement` status `Canceled` (use cases C19/C20)
 
-If the driver authorizes via the terminal but no transaction/cost occurs (e.g. EV never plugged in → `EVConnectionTimeout`), the authorization reservation on the card is released and the station sends `NotifySettlement` with `status = Canceled` and `settlementTime` = now, so the CSMS knows the pre-authorized `idToken` will not result in a charge. The `transactionId` MAY be empty if the payment was canceled before the OCPP transaction started.
+If the driver authorizes via the terminal but no transaction/cost occurs, the authorization reservation on the card is released and the station sends `NotifySettlement` with `status = Canceled` and `settlementTime` = now, so the CSMS knows the pre-authorized `idToken` will not result in a charge.
+
+Two sub-cases distinguish the timing:
+
+- **C19 — canceled before transaction start:** `transactionId` is empty (or absent). Example: the driver tapped the card but never plugged in and the station timed out before any OCPP transaction was opened.
+- **C20 — canceled after transaction start:** `transactionId` is present (the OCPP transaction had already started). Example: `EVConnectionTimeout` fires after the transaction was opened — the card pre-authorization is voided and `transactionId` identifies the aborted transaction.
 
 ### 6.3 Settlement rejected or failed — `NotifySettlement` status `Rejected`/`Failed` (use case C22)
 
@@ -389,7 +396,7 @@ Not a tariff/settlement message, but relevant to cost-limited ad-hoc charging: w
 
 ---
 
-## 7. Quick Reference — Status Enums
+## 7. Quick Reference — Enumerations
 
 | Enum | Message | Values |
 |------|---------|--------|

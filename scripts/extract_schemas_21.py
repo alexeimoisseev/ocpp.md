@@ -9,7 +9,6 @@ deduplicates shared types, and outputs:
 """
 
 import json
-import os
 import re
 import sys
 from collections import defaultdict
@@ -366,6 +365,9 @@ def build_message_registry(schemas):
     for filename, schema in schemas.items():
         if filename.endswith("Request") or filename.endswith("Response"):
             continue
+        if filename in messages:
+            print(f"  WARNING: standalone schema '{filename}' conflicts with an existing Request/Response pair; keeping the pair", file=sys.stderr)
+            continue
         messages[filename] = {
             "request": {
                 "properties": schema.get("properties", {}),
@@ -420,17 +422,6 @@ def build_type_usage_map(type_registry):
 # ---------------------------------------------------------------------------
 # Markdown generation helpers
 # ---------------------------------------------------------------------------
-
-def format_type_ref(prop_def, type_name, is_shared, is_array=False):
-    """Format a type reference as a markdown link."""
-    if is_shared:
-        link = f"[{type_name}](../OCPP-2.1-DataTypes.md#{type_name.lower()})"
-    else:
-        link = f"[{type_name}](#{type_name.lower()})"
-    if is_array:
-        return f"\\[[{type_name}](../OCPP-2.1-DataTypes.md#{type_name.lower()})]" if is_shared else f"\\[[{type_name}](#{type_name.lower()})]"
-    return link
-
 
 def resolve_field_type(prop_def, shared_types):
     """
@@ -958,25 +949,18 @@ def main():
     message_registry = build_message_registry(schemas)
     print(f"  Found {len(message_registry)} messages")
 
-    # Verify all messages in BLOCK_MAP exist
-    all_block_messages = set()
-    for msgs in BLOCK_MAP.values():
-        all_block_messages.update(msgs)
-
-    missing_from_blocks = set(message_registry.keys()) - all_block_messages
-    missing_from_schemas = all_block_messages - set(message_registry.keys())
-
-    if missing_from_blocks:
-        print(f"  WARNING: Messages in schemas but not in BLOCK_MAP: {missing_from_blocks}", file=sys.stderr)
-    if missing_from_schemas:
-        print(f"  WARNING: Messages in BLOCK_MAP but not in schemas: {missing_from_schemas}", file=sys.stderr)
-
     # Completeness guard: every discovered message must be assigned to
-    # exactly one block.
+    # exactly one block, and every BLOCK_MAP entry must have a schema file.
     mapped = {m for msgs in BLOCK_MAP.values() for m in msgs}
     discovered = set(message_registry.keys())
-    missing = discovered - mapped
-    assert not missing, f"Messages not assigned to any block: {sorted(missing)}"
+    missing_from_blocks = discovered - mapped
+    assert not missing_from_blocks, (
+        f"Messages in schemas but not assigned to any BLOCK_MAP block: {sorted(missing_from_blocks)}"
+    )
+    missing_from_schemas = mapped - discovered
+    assert not missing_from_schemas, (
+        f"BLOCK_MAP entries with no matching schema file: {sorted(missing_from_schemas)}"
+    )
     dupes = [m for m in discovered if sum(m in v for v in BLOCK_MAP.values()) > 1]
     assert not dupes, f"Messages in multiple blocks: {sorted(dupes)}"
 

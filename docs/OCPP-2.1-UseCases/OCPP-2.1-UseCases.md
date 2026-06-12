@@ -412,55 +412,122 @@ To keep the station and CSMS lists in sync without retransmitting the whole list
 ## E. Transactions
 
 ### E01 — Start Transaction options
-_(summary pending)_
+
+OCPP 2.1 decouples the "transaction" the CSMS records for billing from the physical charging session, and the `TxStartPoint` configuration variable determines the exact moment the station emits its first `TransactionEvent` (eventType `Started`). Possible start points include `ParkingBayOccupancy` (an occupancy detector sees the EV, trigger `EVDetected`), `EVConnected` (cable plugged in, trigger `CablePluggedIn`), `Authorized` (driver authorized), `DataSigned` (a signed meter reading is taken before energy flows), `PowerPathClosed` (authorized and connected, ready to deliver), and `EnergyTransfer` (energy actually starts flowing). The operator picks the start point to match what is billed — connection time, time of use, or charging time — and not all combinations of start and stop point are sensible.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must set `TxStartPoint` (and the matching `TxStopPoint`) to reflect the billing model; a poor pairing (e.g. start on `ParkingBayOccupancy`, stop on `EVConnected`) can leave a transaction that never closes.
 
 ### E02 — Start Transaction - Cable Plugin First
-_(summary pending)_
+
+In the most common public-charging flow the driver plugs in before authorizing. With `TxStartPoint` = `EVConnected`, the station first reports the connector as `Occupied` via a `NotifyEvent`, then opens the transaction with a `TransactionEvent` (`Started`, trigger `CablePluggedIn`) even though the driver is not yet known. Once the driver authorizes (locally or via the CSMS), the station sends a `TransactionEvent` (`Updated`, trigger `Authorized`) carrying the idToken, locks the connector if the cable is not captive, starts the energy offer, and reports the move to `Charging` with a further `Updated` event. The station keeps the cache entry updated from the response, and continues to send `Updated` events through the session.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent) (CS → CSMS)
 
 ### E03 — Start Transaction - IdToken First
-_(summary pending)_
+
+The mirror of E02: the driver authorizes first, then plugs in. With `TxStartPoint` = `Authorized`, a successful authorization opens the transaction with a `TransactionEvent` (`Started`, trigger `Authorized`) before any cable is connected. When the driver plugs in within the connection timeout, the station reports the connector `Occupied` via `NotifyEvent`, sends an `Updated` event (`EVConnected`/`CablePluggedIn`), locks the connector, starts the energy offer, and reports `Charging`. If the cable is not plugged in within the timeout, the station ends the transaction with a `TransactionEvent` (`Ended`, trigger `EVConnectTimeout`, stop reason `Timeout`). The CSMS must always answer with a `TransactionEvent` response regardless of any sanity-check outcome.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent) (CS → CSMS)
 
 ### E04 — Transaction started while Charging Station is offline
-_(summary pending)_
+
+When the station is offline but can authorize a driver locally (Local Authorization List or Authorization Cache), it starts the transaction immediately, locks the connector, and begins the energy offer. The corresponding `TransactionEvent` (`Started`) is stored in a local queue with the `offline` flag set true. Once connectivity is restored — which may be minutes or days later — the station resumes communication (typically a `Heartbeat` first) and replays the queued events to the CSMS, which acknowledges and the messages leave the queue. The transaction is not tied to any particular `TxStartPoint`.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [Heartbeat](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#heartbeat) (CS → CSMS)
 
 ### E05 — Start Transaction - Id not Accepted
-_(summary pending)_
+
+Because a station may have authorized a token locally on stale data, the CSMS re-validates the idToken in every `TransactionEvent` that carries one. If the response's `idTokenInfo.status` is not `Accepted` (e.g. `Blocked`, `Invalid`, `Expired`, `Unknown`), the station suspends or stops the energy offer according to policy. With `StopTxOnInvalidId` false it keeps the transaction open but suspends energy (an `Updated` event with `SuspendedEVSE`), optionally allowing a small top-up bounded by `MaxEnergyOnInvalidId`. With `StopTxOnInvalidId` true it deauthorizes — emitting an `Updated` or `Ended` event with trigger `Deauthorized` depending on `TxStopPoint`. The cable typically remains locked even when energy is cut.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must set `StopTxOnInvalidId` and `MaxEnergyOnInvalidId`, deciding whether a token the CSMS rejects mid-start merely suspends energy (allowing a capped amount) or terminates the transaction.
 
 ### E06 — Stop Transaction options
-_(summary pending)_
+
+The counterpart to E01: `TxStopPoint` determines when the station closes the transaction with a `TransactionEvent` (eventType `Ended`). Stop points mirror the start options — `ParkingBayOccupancy` (the EV leaves the bay, trigger `EVDeparted`), `EVConnected` (cable unplugged / EV communication lost, trigger `EVCommunicationLost`, stop reason `EVDisconnected`), `Authorized` (driver no longer authorized), and `PowerPathClosed`/`EnergyTransfer`. The chosen stop point must form a coherent pair with the start point so every started transaction can eventually end.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must set `TxStopPoint` consistently with `TxStartPoint` and the billing model; an ill-matched pair risks transactions that never stop.
 
 ### E07 — Transaction locally stopped by IdToken
-_(summary pending)_
+
+A driver ends a session by presenting the same (or a group-validated) idToken a second time. With `TxStopPoint` = `Authorized` or `PowerPathClosed`, the station stops the energy transfer, unlocks the cable if it is not captive, and reports a `TransactionEvent` (`Ended`, trigger `StopAuthorized`, stop reason `Local`). With other stop points the station instead first sends an `Updated` event (trigger `StopAuthorized`) and ends the transaction only when the configured stop condition is later met. The CSMS cannot veto a stop — it can only acknowledge it.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
 
 ### E08 — Transaction stopped while Charging Station is offline
-_(summary pending)_
+
+The offline analogue of E07. While offline with a transaction ongoing, the driver presents an idToken; if the station can validate it locally — the same token that started the session, or a matching `groupId` found in the Local Authorization List or Authorization Cache — it stops the energy offer, unlocks a non-captive cable, and queues a `TransactionEvent` (`Ended`, `offline` = true). When connectivity returns, the station replays the queued stop event (typically after a `Heartbeat`) and the CSMS acknowledges it.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [Heartbeat](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#heartbeat) (CS → CSMS)
 
 ### E09 — When cable disconnected on EV-side: Stop Transaction
-_(summary pending)_
+
+When `StopTxOnEVSideDisconnect` is true and the driver unplugs the cable at the vehicle, the station detects the loss, suspends the energy offer, and ends the transaction with a `TransactionEvent` (`Ended`, trigger `EVCommunicationLost`, stop reason `EVDisconnected`). The station-side connector behaves per `UnlockOnEVSideDisconnect`: if false it stays locked until the driver returns and authorizes; if true it unlocks immediately. Once the cable is fully removed, the station reports the connector `Available` via `NotifyEvent`. Plugging the cable back in does not resume the (already-ended) transaction.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must choose `StopTxOnEVSideDisconnect` (stop vs. suspend on EV-side unplug, see E10) and `UnlockOnEVSideDisconnect`, balancing convenience against the risk of an unattended live or unlocked connector.
 
 ### E10 — When cable disconnected on EV-side: Suspend Transaction
-_(summary pending)_
+
+When `StopTxOnEVSideDisconnect` is false, an EV-side unplug suspends the energy offer for safety but keeps the transaction open. If the driver plugs back in, charging resumes and the station reports a `TransactionEvent` (`Updated`, trigger `CablePluggedIn`). For a non-captive cable the driver must re-authorize to unlock and end the session (trigger `StopAuthorized`), after which removal triggers a `NotifyEvent` reporting the connector `Available`. For a captive cable, if it is not reconnected within a vendor-defined timeout the station ends the transaction (trigger `EVCommunicationLost`, stop reason `EVDisconnected`). Combining this with `UnlockOnEVSideDisconnect` = true is discouraged, as it can leave an authorized transaction with an unlocked connector.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent) (CS → CSMS)
+
+> **ESCALATE: VENDOR-DEFINED** — The reconnection timeout for a captive cable before the suspended transaction is ended is not specified by OCPP and is left to the Charging Station implementer.
 
 ### E11 — Connection Loss During Transaction
-_(summary pending)_
+
+A transaction continues normally even when the station loses its CSMS link mid-session. While offline the station queues all the `TransactionEvent` messages it would otherwise have sent, and replays them with the `offline` flag set once the connection is restored, then resumes normal communication. If memory runs low the station may drop intermediate `Updated` events — never the first or last — and may split bulky meter data across multiple `Updated` events sharing a timestamp; signed meter values are still captured when `SampledDataSignReadings` is true.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
 
 ### E12 — Inform CSMS of an Offline Occurred Transaction
-_(summary pending)_
+
+This covers a transaction that both started and stopped while the station was offline. After reconnecting (and sending a `Heartbeat`), the station replays the full queued sequence for that transaction in order — `Started`, any `Updated`, and `Ended` — each with the `offline` flag true, and the CSMS acknowledges each so it can reconstruct and bill the entire session that happened during the outage.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [Heartbeat](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#heartbeat) (CS → CSMS)
 
 ### E13 — Transaction-related message not accepted by CSMS
-_(summary pending)_
+
+This defines retry behavior when the CSMS, while online, rejects a transaction message or fails to answer within the message timeout (distinct from being fully offline). The station resends the same message, waiting before each retry for an interval equal to `MessageAttemptIntervalTransactionEvent` multiplied by the number of prior attempts, up to `MessageAttemptsTransactionEvent` total attempts. If the final attempt still fails, the station discards that message and proceeds to the next queued transaction message. For example, with three attempts and a 60-second base interval, the waits are 60s then 120s before the message is dropped.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must tune `MessageAttemptsTransactionEvent` and `MessageAttemptIntervalTransactionEvent`, trading delivery persistence against the risk of permanently losing transaction data after the attempt budget is exhausted.
 
 ### E14 — Check transaction status
-_(summary pending)_
+
+The CSMS can ask whether a transaction is still running and whether the station still has undelivered messages for it, using `GetTransactionStatus`. With a `transactionId` the response reports `ongoingIndicator` (transaction still active) and `messagesInQueue` (pending messages for that transaction); without one, only `messagesInQueue` is returned for the queue as a whole. This is useful when the CSMS receives an `Ended` event but notices a gap in sequence numbers and wants to decide whether to wait or bill immediately. A response with both indicators false means either the transaction is finished with nothing pending, or the station no longer knows the transaction.
+
+**Messages:** [GetTransactionStatus](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#gettransactionstatus) (CSMS → CS)
 
 ### E15 — End of charging process
-_(summary pending)_
+
+This aligns OCPP with the ISO 15118 end-of-charging flow (ISO 15118-1 H1). When the EV signals it is done — e.g. a `SessionStopReq(Terminate)` — and the charging session closes, the station reports the transaction to the CSMS. Depending on `TxStopPoint`, if it has not already sent a `StopAuthorized` trigger it emits either a `TransactionEvent` (`Ended`, trigger `StopAuthorized`, stop reason `StoppedByEV`) for stop points like `Authorized`/`PowerPathClosed`/`EnergyTransfer`, or an `Updated` event (trigger `StopAuthorized`) for others. Configured meter measurands are attached to the `Ended` event; under memory pressure intermediate values may be dropped but never the start and end readings.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
 
 ### E16 — Transactions with fixed cost, energy, SoC or time
-_(summary pending)_
+
+New in OCPP 2.1: a driver or the CSMS can cap a transaction by cost, energy, state of charge, or time, and the limit may be changed mid-session more than once. A driver-set limit (e.g. an energy ceiling entered at the UI) is reported in `transactionInfo.transactionLimit` on the next `TransactionEvent` (trigger `LimitChanged`); a CSMS-set limit (e.g. a prepaid balance or direct-payment hold as `maxCost`) is delivered in a `TransactionEvent` response and echoed back by the station as confirmation. When a limit is reached the station suspends energy and reports it with trigger `EnergyLimitReached` or `CostLimitReached` and `chargingState` `SuspendedEVSE`; raising the limit resumes transfer. Note it is the energy transfer, not the transaction duration, that is limited — the transaction still ends per `TxStopPoint`. If the station cannot calculate cost locally it relies on cost updates from the CSMS (in the `TransactionEvent` response or a `CostUpdated`) to know when to stop. Supported limits are advertised in `TxCtrlr.SupportedLimits`, and if several limits are set the first one reached ends the transfer.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [CostUpdated](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#costupdated) (CSMS → CS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator/CSMS must decide which limit types to set and their values, and whether cost is calculated locally (precise cut-off) or driven by CSMS cost updates (which stop at or near the limit).
 
 ### E17 — Resuming transaction after forced reboot
-_(summary pending)_
+
+New in OCPP 2.1: a transaction can survive an unexpected reboot — power loss, watchdog event, maintenance mode, or software fault. If `TxResumptionTimeout` is greater than zero and the interruption was no longer than that timeout, the station restores each affected transaction to its pre-reboot charging state on restart and reports a `TransactionEvent` (`Updated`, trigger `TxResumed`). If `TxAllowEnergyTransferResumption` is false, energy transfer is not automatically resumed (a previously `Charging` state returns as `SuspendedEVSE`), guarding against a different EV having been plugged in during the outage. If the interruption exceeded the timeout, the station ends the transaction with a `TransactionEvent` (`Ended`, trigger `AbnormalCondition`, stop reason `PowerLoss` or `Reboot`). Because `TxProfile` charging profiles need not persist, the CSMS may re-send any applicable profile with `SetChargingProfile` after resumption.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile) (CSMS → CS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must set `TxResumptionTimeout` and `TxAllowEnergyTransferResumption`, trading transaction continuity across outages against the safety risk of auto-resuming energy when the vehicle at the plug may have changed.
 
 ---
 

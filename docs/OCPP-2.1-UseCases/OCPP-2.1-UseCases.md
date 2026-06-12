@@ -1091,22 +1091,42 @@ _(summary pending)_
 ## O. Display Message
 
 ### O01 — Set DisplayMessage
-_(summary pending)_
+
+The CSMS pushes a custom message to a charging station's display by sending `SetDisplayMessageRequest` with a unique ID, the message content (optionally in multiple languages via the `messageExtra` field), a priority (NormalCycle, InFront, or AlwaysFront), an optional display state, optional start/end time window, and an optional target display identifier for stations with multiple screens. The charging station stores the message persistently so it survives power cycles, and responds `Accepted` or rejects with a specific status code such as `NotSupportedPriority`, `NotSupportedState`, `NotSupportedMessageFormat`, `LanguageNotSupported` (when `DisplayMessageLanguage` is configured and the message language is not in the allowed list), or `Rejected` when the station's message capacity is full. In OCPP 2.1, the `DisplayMessageLanguage` configuration variable governs which language tags are accepted, and multi-display targeting is supported via the `display` element in `MessageInfoType`. Language tags must conform to RFC 5646.
+
+**Messages:** [SetDisplayMessage](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#setdisplaymessage)
+
+> **ESCALATE: DISPLAY-POLICY** — Which priorities, states, and message formats a station supports, and what maximum message count is configured, are vendor/operator configuration decisions.
 
 ### O02 — Set DisplayMessage for Transaction
-_(summary pending)_
+
+When a CSO wants to show a message on the display only while a specific transaction is active, the CSMS sends `SetDisplayMessageRequest` with the relevant `transactionId` included in the message object. Behaviour is otherwise identical to O01 — the charging station stores and displays the message according to its priority and timing parameters — but with the additional rule that the message is automatically discarded as soon as the referenced transaction ends. If the charging station does not recognise the supplied transaction ID it immediately responds `UnknownTransaction`. This prevents orphaned messages from remaining on screen after a session has closed.
+
+**Messages:** [SetDisplayMessage](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#setdisplaymessage)
 
 ### O03 — Get All DisplayMessages
-_(summary pending)_
+
+The CSMS retrieves the complete list of OCPP-configured messages currently stored in a charging station by sending `GetDisplayMessagesRequest` with all filter fields omitted (i.e. requesting everything). The station responds immediately with `GetDisplayMessagesResponse` — `Accepted` if at least one message is configured, `Unknown` if none are present — and then streams the full message inventory in one or more `NotifyDisplayMessagesRequest` batches. When the list spans multiple batches, the `tbc` (to be continued) flag is set to `true` on all but the last `NotifyDisplayMessages` message. The `requestId` field ties all notifications back to the original query. Only messages that were set via OCPP can be retrieved; firmware-built-in messages are not visible through this flow.
+
+**Messages:** [GetDisplayMessages](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#getdisplaymessages), [NotifyDisplayMessages](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#notifydisplaymessages)
 
 ### O04 — Get Specific DisplayMessages
-_(summary pending)_
+
+The CSMS queries a subset of OCPP-configured messages by sending `GetDisplayMessagesRequest` with one or more filter fields populated (e.g., message ID, priority, or state). The charging station checks whether any stored messages match the supplied criteria: if matches exist it responds `Accepted` and delivers the results in one or more `NotifyDisplayMessagesRequest` messages using the same batching and `tbc` mechanism as O03; if no messages match the filter the station responds `Unknown` and sends no notifications. This use case is useful for confirming that a specific message is still active or for auditing messages by priority class without pulling the entire list.
+
+**Messages:** [GetDisplayMessages](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#getdisplaymessages), [NotifyDisplayMessages](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#notifydisplaymessages)
 
 ### O05 — Clear a DisplayMessage
-_(summary pending)_
+
+The CSMS removes a specific OCPP-managed message from a charging station by sending `ClearDisplayMessageRequest` with the numeric ID of the message to remove. The charging station deletes the matching message and responds with `ClearDisplayMessageResponse`: `Accepted` if the message was found and removed, `Unknown` if no message with that ID exists, or `Rejected` (added in OCPP 2.1) if the station is unable to process the request. Only messages that were originally installed via OCPP can be cleared through this mechanism; firmware-resident messages are unaffected.
+
+**Messages:** [ClearDisplayMessage](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#cleardisplaymessage)
 
 ### O06 — Replace DisplayMessage
-_(summary pending)_
+
+When the CSMS needs to update the content or parameters of a message that already exists on a charging station, it sends a `SetDisplayMessageRequest` reusing the same message ID as the message to be replaced. The charging station matches the incoming ID to the stored message, replaces both the content and all parameters (priority, state, timing, language, etc.) atomically with the new values, and responds `Accepted`. This differs from O01 in that a pre-existing entry with the same ID is a prerequisite; the use case avoids having to delete-then-re-add when refreshing a message.
+
+**Messages:** [SetDisplayMessage](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md#setdisplaymessage)
 
 ---
 

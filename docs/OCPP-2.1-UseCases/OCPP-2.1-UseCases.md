@@ -534,25 +534,60 @@ New in OCPP 2.1: a transaction can survive an unexpected reboot — power loss, 
 ## F. Remote Control
 
 ### F01 — Remote Start Transaction - Cable Plugin First
-_(summary pending)_
+
+When an EV driver plugs the cable first and the charging station has already started a transaction (triggerReason `CablePluggedIn` or `EVConnectTimedOut`), the CSMS can subsequently send a `RequestStartTransaction` to associate that session with a specific user identity. The charging station returns the already-running `transactionId` in the response so the CSMS can link the two. If `AuthorizeRemoteStart` is set to `true`, the charging station additionally performs an authorization check before enabling energy flow. Energy transfer begins and the charging station reports progress via `TransactionEvent` with `triggerReason = RemoteStart`.
+
+**Messages:** [RequestStartTransaction](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#requeststarttransaction), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must decide whether `AuthorizeRemoteStart` is enabled, determining if a backend-initiated start still requires the charging station to perform a local authorization round-trip before energy flows.
 
 ### F02 — Remote Start Transaction - Remote Start First
-_(summary pending)_
+
+The CSMS initiates a session before the EV driver connects by sending `RequestStartTransaction` with an `idToken` and optionally an `evseId`. The charging station responds `Accepted` and begins waiting for the cable to be plugged in; a new transaction is started immediately with `triggerReason = RemoteStart`. If the cable is not connected within the `ConnectionTimeOut` interval, the charging station ends the transaction with `triggerReason = EVConnectTimeout`. Once connected, energy transfer starts and subsequent state changes are reported as `TransactionEvent` updates.
+
+**Messages:** [RequestStartTransaction](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#requeststarttransaction), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: OPERATOR-CONFIG** — The operator must configure `ConnectionTimeOut` to balance usability (giving drivers time to plug) against EVSE lock-up when a driver never arrives; the default value may not suit all deployment contexts.
 
 ### F03 — Remote Stop Transaction
-_(summary pending)_
+
+The CSMS sends `RequestStopTransaction` carrying the `transactionId` it wishes to end. The charging station stops energy transfer, optionally unlocks the cable-retention lock, and emits a `TransactionEvent` with `triggerReason = RemoteStop` followed by an `Ended` event once the cable is unplugged. The charging station responds `Accepted` if the transaction exists and is active, or `Rejected` if the `transactionId` is unknown.
+
+**Messages:** [RequestStopTransaction](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#requeststoptransaction), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: OPERATOR-CONFIG** — The operator must configure `StopTxOnEVSideDisconnect` and `UnlockConnectorOnEVSideDisconnect` to specify whether a remote stop automatically unlocks the connector; some deployments keep the connector locked until the driver physically requests release.
 
 ### F04 — Remote Stop ISO 15118 Charging from CSMS
-_(summary pending)_
+
+This use case mirrors F03 but targets sessions conducted over ISO 15118-2 or ISO 15118-20. After receiving `RequestStopTransaction`, the charging station stops energy transfer and additionally sends the appropriate ISO 15118 control signal to the vehicle: `EVSENotification = StopCharging` for ISO 15118-2 sessions or a `Terminate` message for ISO 15118-20. The transaction is then closed in OCPP in the same way as a regular remote stop.
+
+**Messages:** [RequestStopTransaction](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#requeststoptransaction), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: VENDOR-DEFINED** — The vendor must implement the correct ISO 15118 session-termination signal path; the OCPP spec delegates the EV-side signaling mechanism entirely to the charging station implementation.
 
 ### F05 — Remotely Unlock Connector
-_(summary pending)_
+
+When an EV driver cannot unplug a cable because the cable-retention lock is stuck, the CSO can trigger a remote unlock by sending `UnlockConnector` with the target `evseId` and `connectorId`. The charging station attempts to release the lock and returns one of `Unlocked`, `UnlockFailed`, `UnknownConnector`, or `OngoingAuthorizedTransaction`. This message targets only the cable-retention lock, not an access-door lock; if the connector has no motorized lock the charging station should respond with a CALLERROR: NotSupported.
+
+**Messages:** [UnlockConnector](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#unlockconnector)
+
+> **ESCALATE: OPERATOR-POLICY** — The operator must define the procedure for notifying the driver and dispatching field service when `UnlockFailed` is returned, as the protocol provides no automatic escalation path beyond the single response status.
 
 ### F06 — Trigger Message
-_(summary pending)_
+
+The CSMS can demand that a charging station send a specific CS-initiated message on demand by issuing `TriggerMessage` with a `requestedMessage` value and an optional `evse` scope. The charging station first replies with `Accepted`, `Rejected`, or `NotImplemented`, and then — if accepted — sends the requested message with current data (e.g. a `TransactionEvent` with `triggerReason = Trigger`, a `MeterValues` snapshot, or a `StatusNotification`). OCPP 2.1 adds `CustomTrigger` support, allowing the CSMS to request vendor-specific message types declared in the charging station's `CustomizationCtrlr.CustomTriggers` variable.
+
+**Messages:** [TriggerMessage](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#triggermessage)
+
+> **ESCALATE: VENDOR-DEFINED** — Custom trigger identifiers are vendor-defined; the CSMS must know which custom trigger strings a given charging station model supports, which requires out-of-band coordination between vendor and operator.
 
 ### F07 — Remote start with fixed cost, energy, SoC or time
-_(summary pending)_
+
+This use case (new in OCPP 2.1) lets the CSMS cap a remotely started session by delivering a `transactionLimit` in the first `TransactionEventResponse` after the session `eventType = Started` is received. The limit can specify one or more of `maxCost`, `maxEnergy`, `maxTime`, or `maxSoC`. The charging station echoes the limit back in the next `TransactionEventRequest` and enforces it by suspending energy delivery (`SuspendedEVSE`) once the threshold is reached. The initial `RequestStartTransaction` follows F01 or F02 flow normally.
+
+**Messages:** [RequestStartTransaction](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#requeststarttransaction), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: POLICY-DEPENDENT** — The CSMS must determine which limit dimension(s) to apply and how to source the values (e.g. from a tariff engine, a driver preference, or a grid contract); the protocol does not prescribe how the limit is calculated or communicated to the driver before the session starts.
 
 ---
 

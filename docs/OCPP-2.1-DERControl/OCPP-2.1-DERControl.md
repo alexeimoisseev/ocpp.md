@@ -131,7 +131,7 @@ Six messages make up block R. Full field-level schemas: [DER Control schemas](..
 | [`NotifyDERAlarm`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#notifyderalarm) | CS → CSMS | Report that a control is overriding normal behavior |
 | [`NotifyDERStartStop`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#notifyderstartstop) | CS → CSMS | Report that a scheduled control started or stopped |
 
-All four CSMS→CS responses (`Get`/`Set`/`Clear`) carry a [`DERControlStatusEnumType`](../OCPP-2.1-DataTypes.md#dercontrolstatusenumtype) `status`: `Accepted`, `Rejected`, `NotSupported`, or `NotFound`.
+All three CSMS → CS responses (`Get`/`Set`/`Clear`) carry a [`DERControlStatusEnumType`](../OCPP-2.1-DataTypes.md#dercontrolstatusenumtype) `status`: `Accepted`, `Rejected`, `NotSupported`, or `NotFound`.
 
 ---
 
@@ -177,7 +177,7 @@ The `supersededIds` array (1–24 ids) appears whenever installing this control 
 
 ### 5.1 Get / Report
 
-`GetDERControl` carries a `requestId` and optional filters (`controlId`, `controlType`, `isDefault`). A missing filter matches any value. The station answers the **request** synchronously with a `GetDERControlResponse` status, then streams the matching controls in one or more asynchronous `ReportDERControlRequest` messages (CS→CSMS), each echoing the original `requestId`.
+`GetDERControl` carries a `requestId` and optional filters (`controlId`, `controlType`, `isDefault`). A missing filter matches any value. The station answers the **request** synchronously with a `GetDERControlResponse` status, then streams the matching controls in one or more asynchronous `ReportDERControlRequest` messages (CS → CSMS), each echoing the original `requestId`.
 
 | Step | Sender → Receiver | Message | Trigger / Notes |
 |------|-------------------|---------|-----------------|
@@ -290,7 +290,7 @@ Active/reactive **power setpoints**, by contrast, ride on OCPP charging profiles
 
 ---
 
-## 9. Device Model: `ACDERCtrlr` & `DCDERCtrlr`
+## 9. Device Model: `DCDERCtrlr` & `ACDERCtrlr`
 
 DER capabilities and the set of supported control modes live in two device-model components (see the [Device Model reference](../OCPP-2.1-DeviceModel/OCPP-2.1-DeviceModel.md)). Both sit at the EVSE level.
 

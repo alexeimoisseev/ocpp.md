@@ -2,21 +2,23 @@
 name: ocpp
 description: >
   OCPP protocol reference for EV charging infrastructure development.
-  Covers OCPP 2.0.1 and OCPP 1.6J. Use when working with OCPP messages,
+  Covers OCPP 2.1, OCPP 2.0.1, and OCPP 1.6J. Use when working with OCPP messages,
   charging station code, CSMS/Central System backends, smart charging,
   transaction handling, or EV charging protocols. Activates on keywords:
   OCPP, charging station, charge point, CSMS, Central System, EVSE,
   charging profile, BootNotification, TransactionEvent, StartTransaction,
   StopTransaction, SetChargingProfile, or any OCPP message name.
+  Also covers OCPP 2.1 features: DER control, V2X, bidirectional power transfer,
+  tariff, battery swap, periodic event stream, device model, dynamic charging profile.
 user-invocable: true
 allowed-tools: Read, Grep, Glob
-argument-hint: "[topic: smart-charging | authorize | transactions | schemas | sequences | 1.6 | ...]"
+argument-hint: "[topic: smart-charging | authorize | transactions | schemas | sequences | 1.6 | 2.1 | ...]"
 ---
 
 # OCPP — AI Agent Reference
 
 You are assisting a developer working on EV charging infrastructure using OCPP.
-This skill covers both **OCPP 2.0.1** and **OCPP 1.6J**. Use it to provide accurate
+This skill covers **OCPP 2.1**, **OCPP 2.0.1**, and **OCPP 1.6J**. Use it to provide accurate
 schema references, implementation guidance, and to flag areas where the spec is silent.
 
 ## Version Detection
@@ -24,12 +26,19 @@ schema references, implementation guidance, and to flag areas where the spec is 
 Detect the OCPP version from the developer's code:
 - **1.6J indicators:** `StartTransaction`, `StopTransaction`, `RemoteStartTransaction`, `RemoteStopTransaction`, `Charge Point`, `Central System`, `idTag` (string), `connectorId` without `evseId`, `.req` / `.conf` naming
 - **2.0.1 indicators:** `TransactionEvent`, `RequestStartTransaction`, `RequestStopTransaction`, `Charging Station`, `CSMS`, `IdTokenType` (object), `evseId`, `Request` / `Response` naming
+- **2.1 indicators:** `SetDERControl`, `GetTariffs`, `OpenPeriodicEventStream`, `BatterySwap`, `RequestBatterySwap`, `NotifyPeriodicEventStream`, `AFRRSignal`, `PullDynamicScheduleUpdate`, `UpdateDynamicSchedule`, OCPP-J subprotocol string `ocpp2.1`, JSON schema `$id` URNs containing `:2:2025:` (e.g. `urn:OCPP:Cp:2:2025:1:SetDERControlRequest`)
 
 If unclear, ask the developer which version they're using.
 
 ## Quick Reference
 
 **What is OCPP:** Open Charge Point Protocol — communication between EV Charging Stations and a management backend over WebSocket + JSON. The station initiates the connection. Both sides can send messages.
+
+### OCPP 2.1
+- **Roles:** Charging Station (CS) ↔ CSMS
+- **Device Model:** Same as 2.0.1 — Charging Station → EVSE(s) → Connector(s). `evseId=0` means the whole station.
+- **91 messages** = 2.0.1's 64 messages + 27 new messages (see below)
+- **New capabilities:** DER control, V2X/bidirectional power transfer, tariff management, battery swap, periodic event stream, dynamic charging profile updates, priority charging, web payment
 
 ### OCPP 2.0.1
 - **Roles:** Charging Station (CS) ↔ CSMS
@@ -132,6 +141,51 @@ If unclear, ask the developer which version they're using.
 
 ### Data Transfer
 - `DataTransfer` (CS↔CSMS) — Bidirectional vendor extension
+
+## OCPP 2.1 — 27 New Messages (added to 2.0.1's 64)
+
+OCPP 2.1 retains all 64 OCPP 2.0.1 messages and adds the following 27:
+
+### DER Control (Distributed Energy Resources)
+- `SetDERControl` (CSMS→CS) — Install DER control setpoint (frequency response, power limits, reactive power)
+- `GetDERControl` (CSMS→CS) — Query installed DER control settings
+- `ClearDERControl` (CSMS→CS) — Remove DER control settings
+- `ReportDERControl` (CS→CSMS) — DER control query response
+- `NotifyDERAlarm` (CS→CSMS) — Report DER-related alarm condition
+- `NotifyDERStartStop` (CS→CSMS) — Notify DER function start/stop
+- `AFRRSignal` (CSMS→CS) — Automatic Frequency Restoration Reserve signal
+
+### Bidirectional / V2X
+- `NotifyAllowedEnergyTransfer` (CSMS→CS) — Inform CS which energy transfer directions are allowed
+- `NotifyPriorityCharging` (CS→CSMS) — Notify that priority charging has started/stopped
+- `UsePriorityCharging` (CSMS→CS) — Request CS to use priority charging
+
+### Battery Swap
+- `BatterySwap` (CS→CSMS) — Notify battery swap event at station
+- `RequestBatterySwap` (CSMS→CS) — Request battery swap operation
+
+### Tariff & Cost
+- `GetTariffs` (CSMS→CS) — Query tariffs installed on station
+- `SetDefaultTariff` (CSMS→CS) — Set the default tariff for an EVSE
+- `ChangeTransactionTariff` (CSMS→CS) — Change tariff mid-transaction
+- `ClearTariffs` (CSMS→CS) — Remove tariffs from station
+- `NotifySettlement` (CS→CSMS) — Notify settlement result for a payment
+- `NotifyWebPaymentStarted` (CS→CSMS) — Notify web-based payment initiation
+- `VatNumberValidation` (CS→CSMS) — Request VAT number validation
+
+### Dynamic Smart Charging
+- `PullDynamicScheduleUpdate` (CS→CSMS) — Request updated schedule for dynamic profile
+- `UpdateDynamicSchedule` (CSMS→CS) — Push schedule update for dynamic profile
+
+### Periodic Event Stream
+- `OpenPeriodicEventStream` (CSMS→CS) — Open a stream for periodic event reporting
+- `ClosePeriodicEventStream` (CSMS→CS) — Close a periodic event stream
+- `GetPeriodicEventStream` (CSMS→CS) — Query open periodic event streams
+- `AdjustPeriodicEventStream` (CSMS→CS) — Modify parameters of an open stream
+- `NotifyPeriodicEventStream` (CS→CSMS, one-way SEND) — Push periodic event data to CSMS
+
+### Certificates
+- `GetCertificateChainStatus` (CS→CSMS) — Query certificate chain OCSP status
 
 ## All 28 OCPP 1.6J Messages
 
@@ -244,6 +298,37 @@ When you need detailed field-level schemas, sequence diagrams, or worked example
 | **OCPP 2.0.1 overview + migration guide** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1.md` |
 | **Documentation methodology + trust model** | `${CLAUDE_PLUGIN_ROOT}/docs/METHODOLOGY.md` |
 | | |
+| **OCPP 2.1 overview + migration from 2.0.1** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1.md` |
+| **OCPP 2.1 data types** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-DataTypes.md` |
+| **OCPP 2.1 enumerations** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md` |
+| **OCPP 2.1 device model** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-DeviceModel/OCPP-2.1-DeviceModel.md` |
+| **OCPP 2.1 DER control deep-dive** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-DERControl/OCPP-2.1-DERControl.md` |
+| **OCPP 2.1 bidirectional / V2X deep-dive** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Bidirectional/OCPP-2.1-Bidirectional.md` |
+| **OCPP 2.1 tariff & cost deep-dive** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-TariffCost/OCPP-2.1-TariffCost.md` |
+| **OCPP 2.1 smart charging deep-dive** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md` |
+| **OCPP 2.1 message sequences** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Sequences/OCPP-2.1-Sequences.md` |
+| **OCPP 2.1 use cases** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-UseCases/OCPP-2.1-UseCases.md` |
+| **OCPP 2.1 certification** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Certification/OCPP-2.1-Certification.md` |
+| **OCPP 2.1 Authorization schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md` |
+| **OCPP 2.1 Availability schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md` |
+| **OCPP 2.1 BatterySwap schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md` |
+| **OCPP 2.1 Bidirectional schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Bidirectional.md` |
+| **OCPP 2.1 Certificates schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md` |
+| **OCPP 2.1 DERControl schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md` |
+| **OCPP 2.1 DataTransfer schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-DataTransfer.md` |
+| **OCPP 2.1 Diagnostics schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md` |
+| **OCPP 2.1 Display schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md` |
+| **OCPP 2.1 Firmware schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Firmware.md` |
+| **OCPP 2.1 LocalAuthList schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-LocalAuthList.md` |
+| **OCPP 2.1 MeterValues schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-MeterValues.md` |
+| **OCPP 2.1 Provisioning schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md` |
+| **OCPP 2.1 RemoteControl schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md` |
+| **OCPP 2.1 Reservation schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Reservation.md` |
+| **OCPP 2.1 Security schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Security.md` |
+| **OCPP 2.1 SmartCharging schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md` |
+| **OCPP 2.1 TariffAndCost schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md` |
+| **OCPP 2.1 Transactions schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md` |
+| | |
 | **OCPP 1.6J overview + config keys** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J.md` |
 | **1.6J Core schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md` |
 | **1.6J Smart Charging schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-SmartCharging.md` |
@@ -264,6 +349,21 @@ When you need detailed field-level schemas, sequence diagrams, or worked example
 ### Topic argument routing
 
 If invoked with `/ocpp <topic>`, immediately read the relevant files:
+
+**OCPP 2.1 topics:**
+- `/ocpp 2.1` or `/ocpp 2.1 overview` → read `OCPP-2.1.md` overview
+- `/ocpp 2.1 migration` → read `OCPP-2.1.md` (contains migration guide from 2.0.1)
+- `/ocpp 2.1 der` or `/ocpp 2.1 der-control` → read `OCPP-2.1-DERControl/OCPP-2.1-DERControl.md` + `OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md`
+- `/ocpp 2.1 v2x` or `/ocpp 2.1 bidirectional` → read `OCPP-2.1-Bidirectional/OCPP-2.1-Bidirectional.md` + `OCPP-2.1-Schemas/OCPP-2.1-Schemas-Bidirectional.md`
+- `/ocpp 2.1 tariff` or `/ocpp 2.1 cost` → read `OCPP-2.1-TariffCost/OCPP-2.1-TariffCost.md` + `OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md`
+- `/ocpp 2.1 device-model` → read `OCPP-2.1-DeviceModel/OCPP-2.1-DeviceModel.md`
+- `/ocpp 2.1 enums` or `/ocpp 2.1 enumerations` → read `OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md`
+- `/ocpp 2.1 use-cases` → read `OCPP-2.1-UseCases/OCPP-2.1-UseCases.md`
+- `/ocpp 2.1 certification` → read `OCPP-2.1-Certification/OCPP-2.1-Certification.md`
+- `/ocpp 2.1 schemas` → read all 19 files in `OCPP-2.1-Schemas/`
+- `/ocpp 2.1 smart-charging` → read `OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md` + `OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md`
+- `/ocpp 2.1 sequences` → read `OCPP-2.1-Sequences/OCPP-2.1-Sequences.md`
+- `/ocpp 2.1 types` or `/ocpp 2.1 data-types` → read `OCPP-2.1-DataTypes.md`
 
 **OCPP 1.6J topics:**
 - `/ocpp 1.6` or `/ocpp 1.6j` → read OCPP-1.6J.md overview
@@ -297,7 +397,7 @@ If invoked with `/ocpp <topic>`, immediately read the relevant files:
 
 2. **Respect the escalation model.** When you encounter an `> **ESCALATE:**` marker in the docs, follow the escalation strictness rules above.
 
-3. **Detect version from context.** Use the version detection rules above. If the code uses `StartTransaction`/`StopTransaction`, it's 1.6J — read 1.6J docs. If it uses `TransactionEvent`, it's 2.0.1. If no version indicators are present, assume 2.0.1 and mention the assumption.
+3. **Detect version from context.** Use the version detection rules above. If the code uses `StartTransaction`/`StopTransaction`, it's 1.6J — read 1.6J docs. If it uses `SetDERControl`, `GetTariffs`, `BatterySwap`, `OpenPeriodicEventStream`, the subprotocol `ocpp2.1`, or schema URNs containing `:2:2025:`, it's 2.1 — read 2.1 docs. If it uses `TransactionEvent` without 2.1 indicators, it's 2.0.1. If no version indicators are present, assume 2.0.1 and mention the assumption.
 
 4. **Don't invent protocol behavior.** If you're unsure whether something is spec-defined, check the docs first. If the docs don't cover it, say so explicitly rather than guessing.
 

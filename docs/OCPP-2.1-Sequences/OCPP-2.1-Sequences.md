@@ -17,6 +17,7 @@ This document contains **0 escalation points**; the policy decisions touching th
 - [OCPP 2.1 DER Control](../OCPP-2.1-DERControl/OCPP-2.1-DERControl.md) — DER control/curve model used in §1.
 - [OCPP 2.1 Bidirectional / V2X](../OCPP-2.1-Bidirectional/OCPP-2.1-Bidirectional.md) — operation modes and setpoints used in §2.
 - [OCPP 2.1 Tariff & Cost](../OCPP-2.1-TariffCost/OCPP-2.1-TariffCost.md) — web-payment and tariff context for §4.
+- [OCPP 2.1 Transactions schema](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md) — `TransactionEvent` message reference for §4.
 - Schema docs linked inline for every message.
 
 ---
@@ -60,7 +61,7 @@ Coordinates a physical battery exchange. Concept and fields are in the [Smart Ch
 | Step | Sender → Receiver | Message | Trigger/Notes |
 |------|-------------------|---------|---------------|
 | 1 | CSMS → CS | [`RequestBatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#requestbatteryswap) | (Optional initiator) CSMS asks the station to begin a swap for `idToken`, assigning a `requestId`. CS replies `status` = [`GenericStatusEnumType`](../OCPP-2.1-DataTypes.md#genericstatusenumtype). |
-| 2 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | `eventType` = `BatteryIn` ([`BatterySwapEventEnumType`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswapeventenumtype)): the driver's depleted pack has been inserted **into** the station slot. `batteryData[]` carries `evseId` (slot), `serialNumber`, `soC`, `soH`; CS assigns the `requestId`. Event names are from the station-slot perspective; default swap order is In-Out. |
+| 2 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | `eventType` = `BatteryIn` ([`BatterySwapEventEnumType`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswapeventenumtype)): the driver's depleted pack has been inserted **into** the station slot. `batteryData[]` carries `evseId` (slot), `serialNumber`, `soC`, `soH`; CS assigns the `requestId`. |
 | 3 | — | (charged pack offered) | Station presents/charges a charged pack for the driver to collect from the slot. |
 | 4 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | `eventType` = `BatteryOut`: the charged pack has been taken **out** of the station slot by the driver. `batteryData[]` (incl. `serialNumber`, `soC`, `soH`) describes the collected pack; same `requestId` as the `BatteryIn`. |
 | 5 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | (Error path) If the charged pack offered after `BatteryIn` is **not collected** within `BatterySwapOutTimeout`, CS reports `eventType` = `BatteryOutTimeout` with the same `requestId` (otherwise CSMS is left with an orphan `BatteryIn`). |

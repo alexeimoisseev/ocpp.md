@@ -638,16 +638,36 @@ After an EV driver is authorized and plugs in, if the charging station's cable-r
 ## H. Reservation
 
 ### H01 — Reservation
-_(summary pending)_
+
+The CSMS reserves an EVSE for a specific EV driver by sending `ReserveNow` with an `idToken`, an `expiryDateTime`, and optionally an `evseId` or a `connectorType`. If `evseId` is omitted, the charging station reserves any available EVSE on the station; if `evseId` is provided, only that specific EVSE is reserved. On success the charging station responds `Accepted` and reports the connector status change to `Reserved` via `NotifyEvent` (or the legacy `StatusNotification`). Only available EVSEs can be reserved; the spec acknowledges that reserving a currently occupied EVSE is possible if the CSMS delays sending the message until the EVSE becomes free.
+
+**Messages:** [ReserveNow](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Reservation.md#reservenow), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent), [StatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md#statusnotification)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must define the maximum reservation window, how to handle a reservation that outlasts the expiry without being used, and whether to charge a no-show fee — none of which are specified by the protocol.
 
 ### H02 — Cancel Reservation
-_(summary pending)_
+
+The CSMS can withdraw an active reservation before its expiry time by sending `CancelReservation` with the `reservationId` originally assigned in H01. If the reservation is found and removed, the charging station responds `Accepted` and the EVSE returns to `Available`; if the `reservationId` is unknown, it responds `Rejected`. A connector state update (`NotifyEvent` or `StatusNotification`) is sent to reflect the availability change.
+
+**Messages:** [CancelReservation](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Reservation.md#cancelreservation), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent), [StatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md#statusnotification)
+
+> **ESCALATE: OPERATOR-POLICY** — The operator must decide whether a driver-requested cancellation is routed through the CSMS to the charging station or handled locally, and whether any cancellation penalty is applied at the CSMS layer.
 
 ### H03 — Use a reserved EVSE
-_(summary pending)_
+
+When the driver whose `idToken` (or `groupIdToken`) matches the reservation presents their credential at the reserved EVSE, the charging station clears the reservation and begins the authorization and transaction flow as normal. The charging station sends `ReservationStatusUpdate` with `reservationUpdateStatus = Removed` to inform the CSMS that the reservation was consumed. If a different driver's token is presented, the charging station rejects it (or handles it according to the authorization result) and the reservation remains active.
+
+**Messages:** [ReservationStatusUpdate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Reservation.md#reservationstatusupdate), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+
+> **ESCALATE: OPERATOR-POLICY** — The operator must configure what happens when a third-party driver attempts to use a reserved EVSE: whether to reject silently, show an error, or allow charging if capacity permits; the spec does not prescribe behavior beyond keeping the reservation intact.
 
 ### H04 — Reservation Ended, not used
-_(summary pending)_
+
+If the reservation expires before the reserved driver shows up, the charging station automatically releases the EVSE and informs the CSMS by sending `ReservationStatusUpdate` with `reservationUpdateStatus = Expired`. Similarly, if the reservation is cleared for any other reason without a transaction being started, the status `NoTransaction` is used. After the reservation ends, the connector reverts to `Available` and the CSMS is responsible for any downstream actions such as charging a no-show fee.
+
+**Messages:** [ReservationStatusUpdate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Reservation.md#reservationstatusupdate), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent), [StatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md#statusnotification)
+
+> **ESCALATE: OPERATOR-POLICY** — The operator must define the business logic that executes when a reservation expires unused: whether to notify the driver, levy a penalty, re-open the slot to walk-up users, or trigger a new reservation offer — all of which lie outside the OCPP protocol boundary.
 
 ---
 

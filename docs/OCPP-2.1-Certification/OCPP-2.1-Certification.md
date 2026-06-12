@@ -93,12 +93,12 @@ The mapping basis is the transitive derivation described in [How This Document W
 | [S. Battery Swapping](../OCPP-2.1-UseCases/OCPP-2.1-UseCases.md#s-battery-swapping) | O | · | · | · | · | · |
 
 Reading notes:
-- **Core** is broad because Part 5 places the bulk of OCPP functionality in it (auth, provisioning, transactions, remote control, availability, metering, firmware, certificate install/retrieve, diagnostics/customer-info) plus optional Core sub-areas (D Local Auth List, H Reservation, I/O tariff & display, P data transfer, S battery swapping for the battery-swap subtype).
+- **Core** is broad because Part 5 places the bulk of OCPP functionality in it (auth, provisioning, transactions, remote control, availability, metering, firmware, certificate install/retrieve, diagnostics/customer-info) plus optional Core sub-areas (D Local Auth List, H Reservation, blocks I (Tariff And Cost) and O (Display Message), P data transfer, S battery swapping for the battery-swap subtype).
 - **Adv. Security** is narrow: it sits on top of Core's certificate/security functionality (blocks A and M) — client-side cert, update CS cert, security-profile upgrade.
-- **ISO 15118 support** spans authorization (C, incl. PnC contract certs and EIM), smart charging (K/F), certificate management (M), and signed meter values (J); its dependency on Advanced Security and Smart Charging is why those blocks appear under it as well.
-- **Smart Charging** EMS-control sub-area reaches into V2X (block Q) via external V2X control features (`SC-10`), hence the **O** there.
+- **ISO 15118 support** spans authorization (C, incl. PnC contract certs and EIM), smart charging (K/F), certificate management (M), and signed meter values (J); its dependency on Advanced Security and Smart Charging is why those blocks appear under it as well. Block A (Security/TLS use cases A01–A05) is reachable via the Advanced Security dependency, hence A = **O**. Block E is **O** because ISO 15118 charging happens within a transaction, so transaction-event use cases (block E) are exercised during ISO 15118 sessions.
+- **Smart Charging** EMS-control sub-area reaches into V2X (block Q) via external V2X control features (`SC-10`), hence the **O** there. Block E is **O** because remote start with a charging profile — and profile application during an active transaction — exercises transaction-event use cases (block E).
 - **Bidirectional Power Transfer** is block Q; it requires Smart Charging (K) and uses authorization (C) for V2X authorization over ISO 15118-20.
-- **DER control** is block R; in practice it is exercised alongside V2X sessions (block Q) and smart-charging setpoints (block K), hence the **O** marks.
+- **DER control** is block R; in practice it is exercised alongside V2X sessions (block Q) and smart-charging setpoints (block K), hence the **O** marks there. Block E is **O** because DER/V2X control operates within an active transaction, so block E use cases are exercised alongside Q and K.
 
 ### 3.1 Feature → use-case anchors (selected, from Part 5 Appendix C)
 
@@ -112,7 +112,7 @@ These are representative feature IDs and the Part 2 use cases they map to, illus
 | `C-09.x` | Transaction start points (TxStartPoint) | Core | E01 (S1–S6) | E |
 | `C-48` | Authorization of remote start | Core | F01, F02 | F |
 | `C-04` | Limit StatusNotifications | Core | (config var for G01) | G |
-| `R-0`/`R-2` | Reservation support | Core (Reservation) | H block use cases | H |
+| `R-0`/`R-2` | Reservation support (these feature IDs correspond to the `Core: R-0` Reservation sub-area listed in §5) | Core (Reservation) | H block use cases | H |
 | `C-40`/`C-42` | Supported / signed meter measurands | Core | J01, J02 | J |
 | `C-60` | Cancel ongoing firmware update | Core | L01, L02 | L |
 | `C-56` | Provide SummaryInventory | Core | B07 | B |
@@ -124,12 +124,12 @@ These are representative feature IDs and the Part 2 use cases they map to, illus
 | `SC-6 (2.1)` | Priority charging | Smart Charging | block K use cases | K |
 | `SC-10 (2.1)` | EMS Control (external system / external V2X) | Smart Charging | K, Q | K/Q |
 | `ISO-1.2 (2.1)` | ISO 15118-20 supported | ISO 15118 | C, K, M, Q use cases | C/K/M/Q |
-| `ISO-6 (2.1)` | ServiceRenegotiation | ISO 15118 | block K renegotiation | K |
+| `ISO-6 (2.1)` | ServiceRenegotiation | ISO 15118 | Q01–Q02 (renegotiation is smart-charging-flavoured but Appendix C files it under Q) | Q |
 | `BPT-1` | Frequency support | Bidir. Power Transfer | Q01… (V2X) | Q |
 | `BPT-2` | Local load balancing | Bidir. Power Transfer | Q (V2X) | Q |
 | `C-76 (2.1)` | Battery Swapping Stations (CSMS) | Core (battery-swap subtype) | S block use cases | S |
 
-> The **DER control** and **Advanced Security** profiles have **no optional features** in Part 5 (their tables state "No optional features for this profile"); all their certification test cases are Mandatory (or Conditional on hardware/ISO features) once you certify for the profile.
+> **DER control** has no optional features on either side (Charging Station and CSMS tables both state "No optional features for this profile"); all its test cases are Mandatory or Conditional on hardware/ISO features once you certify for the profile. **Advanced Security** has no optional features on the CSMS side, but the Charging Station side lists optional features AS-2, AS-3, AS-4, AS-4.1, and AS-4.2 in Part 5 Table 2.
 
 ---
 
@@ -190,7 +190,7 @@ The Part 5 test sections are: Core (4.2), Advanced Security (4.3), Smart Chargin
 | Which profile is always required? | Core. |
 | Which profiles are new in 2.1? | Bidirectional Power Transfer, DER control (plus the Payment sub-area and battery-swap subtype within Core, and 2.1 extensions to Smart Charging and ISO 15118). |
 | Which profiles have dependencies? | ISO 15118 support depends on Advanced Security + Smart Charging test cases; Bidirectional Power Transfer requires Smart Charging. |
-| Which profiles have no optional features? | Advanced Security and DER control. |
+| Which profiles have no optional features? | DER control has no optional features on either side. Advanced Security has no optional features on the CSMS side but has optional Charging Station features (AS-2/AS-3/AS-4/AS-4.1/AS-4.2). |
 | Is battery swapping its own profile? | No — it is a charging-station subtype (`BatterySwapCtrlr` in Core; CSMS feature `C-76`). |
 | Is payment its own profile? | No — it is a Payment (2.1) sub-area within Core (`Core: P-0 (2.1)`). |
 | Who certifies? | OCA-accredited test labs using the OCA Compliance Testing Tool. This document does not. |

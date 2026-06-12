@@ -1287,20 +1287,43 @@ The mirror of Q11, describing the state on reconnection. If the offline interval
 
 ## R. DER Control
 
+> Block R covers Distributed Energy Resource (DER) controls — grid-code behaviours such as Volt-Watt and Volt-Var curves, frequency droop, ride-through (must-trip / may-trip) and discharge-power limits — that a utility mandates for bidirectional sessions to protect the grid. These satisfy grid-code obligations and are conceptually separate from the V2X frequency-support use cases of block Q. For the control catalogue, curve types, default-vs-scheduled priority model and alarm semantics, see the [DER Control deep-dive](../OCPP-2.1-DERControl/OCPP-2.1-DERControl.md). The DER control may be enforced by the inverter in the EVSE, by the inverter in the EV, or split between them.
+
 ### R01 — Starting a V2X session with DER control in EVSE
-_(summary pending)_
+
+When the inverter sits in the EVSE — always the case for DC (ISO 15118-20 `DC_BPT`, CHAdeMO) and possible for AC `AC_BPT` where the station controls the EV's power via the charge loop — the station enforces the utility's DER controls itself and the EV needs no DER configuration. Beforehand the CSMS installs the controls (e.g. a `VoltWatt` curve and a `LimitMaxDischarge` of 50 %) with `SetDERControl`, which the station must store persistently; a DC station exposes its inverter nameplate capabilities in the `DCDERCtrlr` component (reportable via the device model). The bidirectional session then proceeds as an ordinary V2X transaction (`NotifyEVChargingNeeds` → `SetChargingProfile` `TxProfile`), with the station continuously applying the curves and discharge limit during the charge loop.
+
+**Messages:** [SetDERControl](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#setdercontrol), [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile)
+
+> **ESCALATE: GRID-MARKET** — Which DER controls (curves, droop parameters, discharge limits) apply and their values are dictated by the utility/grid code for the station's region, not by the protocol.
 
 ### R02 — Starting a V2X session with DER control in EV
-_(summary pending)_
+
+For an AC `AC_BPT_DER` session the inverter is inside the EV and the station cannot operate it directly; instead the station passes the DER controls down to the EV to execute. The CSMS still installs the controls with `SetDERControl` (persisted by the station), but because they are not listed in `ACDERCtrlr.ModesSupported` the station forwards them to the EV during ISO 15118-20 `ChargeParameterDiscovery`, and reports the EV inverter's nameplate and supported-control list to the CSMS in the `derChargingParameters` of `NotifyEVChargingNeeds`. When a control acts on the session (e.g. a high-frequency trip or a discharge-power cap), the EV signals the station via the 15118 DERAlarm element and the station forwards it to the CSMS with `NotifyDERAlarm`.
+
+**Messages:** [SetDERControl](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#setdercontrol), [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyDERAlarm](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#notifyderalarm)
+
+> **ESCALATE: GRID-MARKET** — The set of DER controls the EV must support for `AC_BPT_DER` (advertised via `DERControlFunctions` in service negotiation) and their values reflect the utility's grid-code requirements.
 
 ### R03 — Starting a V2X session with hybrid DER control in both EV and EVSE
-_(summary pending)_
+
+A blend of R01 and R02 for `AC_BPT_DER` sessions where the EV's inverter supports only some of the required controls. The station advertises the controls it can emulate locally (via the charge loop) in `ACDERCtrlr.ModesSupported`; for those it can emulate it may omit them from the 15118 `AC_BPT_DER` service negotiation, letting an EV with a less-capable inverter still participate. Controls the EV does support are configured in the EV (the station does not emulate what the EV can do natively), while the remainder are enforced by the station. As in R02 the station persists the `SetDERControl` settings, reports EV nameplate data in `NotifyEVChargingNeeds`, and raises `NotifyDERAlarm` whenever any control — whether executed by EV or EVSE — affects the session.
+
+**Messages:** [SetDERControl](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#setdercontrol), [NotifyEVChargingNeeds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#notifyevchargingneeds), [SetChargingProfile](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md#setchargingprofile), [NotifyDERAlarm](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#notifyderalarm)
 
 ### R04 — Configure DER control settings at Charging Station
-_(summary pending)_
+
+The management workflow for DER controls. The CSMS configures a control with `SetDERControl`, marking it either a default (`isDefault = true`, no `startTime`/`duration`, takes effect immediately) or a scheduled control (`isDefault = false`, with a `startTime`/`duration`). Each `controlType` (e.g. `FreqDroop`, `VoltVar`, `VoltWatt`, `HFMustTrip`, `HFMayTrip`, `LimitMaxDischarge`, `EnterService`, `Gradients`) must carry exactly its matching control field and, for curve types, the `yUnit` prescribed for that type; `EnterService` and `Gradients` exist only as defaults. Conflicts are resolved by a numeric `priority` (lower value wins): a higher-priority new control supersedes the existing one (which gets `isSuperseded = true` and is named via `supersededId`), while a lower-priority new control is itself immediately superseded. The station deletes scheduled controls after `startTime + duration`, reverts to the default when no scheduled control is active, and reports start/stop of scheduled controls with `NotifyDERStartStop`. The CSMS reads back configured controls with `GetDERControl` (filtering by `isDefault`/`controlType`/`controlId`), which the station answers with one or more paged `ReportDERControl` messages (`tbc` flag set on all but the last), and removes them with `ClearDERControl`.
+
+**Messages:** [SetDERControl](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#setdercontrol), [GetDERControl](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#getdercontrol), [ReportDERControl](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#reportdercontrol), [ClearDERControl](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#cleardercontrol), [NotifyDERStartStop](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#notifyderstartstop)
+
+> **ESCALATE: GRID-MARKET** — The DER programs, curve points, droop parameters and their relative priorities originate from the utility/grid code; the CSMS merely relays the highest-priority applicable control to each station.
 
 ### R05 — Charging station reporting a DER event
-_(summary pending)_
+
+When a grid anomaly forces the station to deviate from the active charging profile because of a DER control — for example an overvoltage that makes a configured `VoltWatt` curve reduce discharge power — the station reports the event once per occurrence with `NotifyDERAlarm`, setting the `controlType` (e.g. `VoltWatt`) and the `gridEventFault` (e.g. `OverVoltage`) together with a `timestamp`. A DC station then lowers discharge power per the curve directly; an AC station instructs the EV via repeated 15118 `AC_ChargeLoop` messages each time the curve value changes. When conditions return to normal the station sends a closing `NotifyDERAlarm` with `alarmEnded = true` and resumes following the charging profile. (Purely reactive-power actions such as Volt-Var are not reported unless they affect the session's active-power profile.)
+
+**Messages:** [NotifyDERAlarm](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md#notifyderalarm)
 
 ---
 

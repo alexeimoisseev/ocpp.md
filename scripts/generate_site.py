@@ -1053,7 +1053,7 @@ def build_page(
 
     if not description:
         if is_index:
-            description = "A structured OCPP protocol reference for AI agents and developers working on EV charging infrastructure. Covers OCPP 2.0.1 and 1.6J specifications."
+            description = "A structured OCPP protocol reference for AI agents and developers working on EV charging infrastructure. Covers OCPP 2.1, 2.0.1 and 1.6J specifications."
         else:
             description = f"{title} \u2014 OCPP protocol reference for AI agents."
 
@@ -1066,6 +1066,7 @@ def build_page(
     <h1>Open Charge Point Protocol Reference</h1>
     <p class="subtitle">Schemas, sequences, smart charging, and escalation markers for AI agents and developers.</p>
     <div class="meta">
+      <span><a href="./ocpp-2.1/" style="color: var(--text-light); text-decoration: underline; text-decoration-color: rgba(138,133,124,0.4);">OCPP 2.1</a></span>
       <span><a href="./ocpp-2.0.1/" style="color: var(--text-light); text-decoration: underline; text-decoration-color: rgba(138,133,124,0.4);">OCPP 2.0.1</a></span>
       <span><a href="./ocpp-1.6j/" style="color: var(--text-light); text-decoration: underline; text-decoration-color: rgba(138,133,124,0.4);">OCPP 1.6J</a></span>
     </div>

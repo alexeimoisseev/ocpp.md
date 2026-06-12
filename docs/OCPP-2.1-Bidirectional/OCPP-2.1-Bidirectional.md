@@ -62,7 +62,7 @@ The eight values (the first four are shared with regular smart charging; the oth
 | `ChargingOnly` | CS follows `limit` only | No | Default. Charge-only; used as a safe starting mode before V2X is authorized. `setpoint`/`dischargeLimit` not used. |
 | `ExternalSetpoint` | External actor (e.g. EMS) sets the setpoint | Yes (setpoint may be negative) | CSMS may still bound it with `limit` and `dischargeLimit`. |
 | `ExternalLimits` | External actor sets `limit` and `dischargeLimit` | Yes | Like `ExternalSetpoint` but the limits, not the setpoint, are externally driven. |
-| `CentralSetpoint` | CSMS sets `setpoint` in the schedule period | Yes (negative = discharge) | With `chargingProfileKind = Dynamic`, CSMS updates `setpoint` via `UpdateDynamicSchedule` without resending the profile. `limit`/`dischargeLimit` not used. |
+| `CentralSetpoint` | CSMS sets `setpoint` in the schedule period | Yes (negative = discharge) | With `chargingProfileKind = Dynamic`, CSMS updates `setpoint` via `UpdateDynamicSchedule` without resending the profile. `limit`/`dischargeLimit` are not the control signal (`setpoint` is); optional bounding still applies. |
 | `CentralFrequency` | CSMS computes setpoint from centrally measured frequency | Yes | For calibrated frequency metering done centrally. Requires `chargingProfileKind = Dynamic`; CSMS pushes new setpoints continually. If no update arrives in time, the profile terminates and the CS falls back to a lower stack level. |
 | `LocalFrequency` | CS computes setpoint locally from a frequency-watt curve | Yes | FCR / aFRR participation. Requires `chargingRateUnit = W`. Uses `v2xFreqWattCurve` (FCR) and/or `v2xSignalWattCurve` + `AFRRSignal` (aFRR). See §5. |
 | `LocalLoadBalancing` | CS computes setpoint locally from a metered building load | Yes | EV compensates building load (e.g. against solar). Controlled by configuration keys `UpperThreshold`, `LowerThreshold`, `UpperOffset`, `LowerOffset` (require `UpperThreshold > LowerThreshold`). |
@@ -94,6 +94,8 @@ Frequency-support curve fields (used by the frequency modes, §5):
 | `v2xFreqWattCurve` | [`V2XFreqWattPointType`](../OCPP-2.1-DataTypes.md#v2xfreqwattpointtype)[] (1–20 points) | Power/frequency (FCR) curve: each point is `{frequency` (Hz)`, power` (W; +charge / −discharge)`}`. Values between points are linearly interpolated. |
 | `v2xSignalWattCurve` | [`V2XSignalWattPointType`](../OCPP-2.1-DataTypes.md#v2xsignalwattpointtype)[] (1–20 points) | Signal/watt (aFRR) curve: each point is `{signal` (integer)`, power` (W)`}`. Maps an `AFRRSignal.signal` value to a power level. |
 | `v2xBaseline` | number | Baseline power on top of which `v2xFreqWattCurve` / `v2xSignalWattCurve` outputs are added. |
+
+> Note: the JSON schema accepts a single point (`minItems: 1`), but a one-point curve yields a fixed output independent of frequency/signal — no interpolation is possible. The spec prose expects at least two points for a meaningful curve.
 
 For the full charging-profile structure, stack-level priority, and `chargingProfileKind` (`Absolute` / `Recurring` / `Relative` / `Dynamic`), see the [SmartCharging schema doc](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md). V2X does not change those mechanics; it only adds the fields above and the V2X `operationMode` values.
 
@@ -134,7 +136,7 @@ Because a V2X energy service often needs third-party authorization that may not 
 
 A mode change is just a new schedule period or a higher-priority profile expiring. Two key fallbacks:
 - **Dynamic timeout** (`CentralSetpoint` / `CentralFrequency`): if no `UpdateDynamicSchedule` arrives within `chargingSchedule.duration`, the schedule ends and the CS falls back to the next valid (lower stack-level) profile. For `CentralFrequency` this may be a `LocalFrequency` profile, so frequency support continues locally (Q08) until central updates resume.
-- **Offline**: see §7.
+- **Offline**: see §8.
 
 ---
 
@@ -148,7 +150,7 @@ FCR (primary control reserve) reacts automatically within seconds to grid freque
 
 ### 5.2 aFRR (automatic Frequency Restoration Reserve)
 
-aFRR is the secondary reserve; it gradually replaces FCR after ~30 s, must be fully available within 15 minutes once activated, and must track a new setpoint every few seconds. Activation comes from the TSO to the operator (CSO), which forwards it to affected stations as an [`AFRRSignal`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Bidirectional.md#afrrsignal).
+aFRR is the secondary reserve; it gradually replaces FCR after ~30 s, must be fully available within 15 minutes once activated (typical TSO/market figures, e.g. ENTSO-E, not OCPP constants), and must track a new setpoint every few seconds (typical TSO/market requirements). Activation comes from the TSO to the operator (CSO), which forwards it to affected stations as an [`AFRRSignal`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Bidirectional.md#afrrsignal).
 
 `AFRRSignal` (CSMS → CS):
 

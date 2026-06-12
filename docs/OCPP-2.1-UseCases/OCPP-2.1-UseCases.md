@@ -192,79 +192,202 @@ A variant of B12 in which the Charging Station is configured to resume interrupt
 ## C. Authorization
 
 ### C01 — EV Driver Authorization using RFID
-_(summary pending)_
+
+The baseline authorization flow: a driver presents an RFID card and the Charging Station forwards the token to the CSMS for validation before offering energy. The CSMS replies with an authorization status (and, optionally, the set of EVSEs the token is valid for and an associated group token), so the station only allows charging when the token is accepted and applicable to that EVSE. The same token that started a session can always end it locally without re-contacting the CSMS, and driver-facing messages should be shown in the configured language(s).
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS)
 
 ### C02 — Authorization using a start button
-_(summary pending)_
+
+For simple stations without an RFID reader, charging can be triggered by a physical start button (or mechanical key, or simply by plugging in). No `Authorize` message is sent; instead the Charging Station opens a transaction and reports it with a `TransactionEventRequest` carrying an `idToken` of type `NoAuthorization`, which the CSMS cannot reject and must accept. Tokens of this type are never stored in the Authorization Cache.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must decide whether button-started (unauthenticated) charging is acceptable at a given site and how the resulting energy is accounted for or billed, since no driver identity is captured.
 
 ### C03 — Authorization using credit/debit card
-_(summary pending)_
+
+This use case has been retired as a stand-alone authorization case in OCPP 2.1. Its objective — starting a transaction by paying with a credit or debit card — is now covered by the dedicated ad-hoc payment use cases, principally [C24](#c24--ad-hoc-payment-via-stand-alone-payment-terminal) (stand-alone terminal) and the locally connected terminal flows ([C18](#c18--authorization-using-locally-connected-payment-terminal) and following). Refer to those entries for the current behavior.
+
+**Messages:** No dedicated message.
 
 ### C04 — Authorization using PIN-code
-_(summary pending)_
+
+A station with a keypad lets the driver type a PIN (or similar key entry such as a licence-plate number) instead of presenting a card. The entered code is sent to the CSMS in an `Authorize` request with the token type set to `KeyCode`, and the CSMS responds accepting or rejecting it. PIN codes must never appear in logs, and stations are encouraged to apply brute-force protection such as increasing back-off after failed attempts.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator/vendor must define PIN length and brute-force countermeasures (lockout/back-off thresholds), which the spec only recommends rather than prescribes.
 
 ### C05 — Authorization for CSMS initiated transactions
-_(summary pending)_
+
+When a transaction is started remotely (for example from a mobile app) for a driver who has no RFID, the CSMS supplies the identifier itself. It sends a `RequestStartTransaction` with a server-generated token (type `Central`) — which may be a single-use virtual code or a contract identifier such as an eMAID. Because the CSMS already knows this token, the Charging Station does not send an `Authorize` request and does not cache it; it accepts the remote start and reports the started session via `TransactionEvent`, echoing the token and the remote start id.
+
+**Messages:** [RequestStartTransaction](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#requeststarttransaction) (CSMS → CS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
 
 ### C06 — Authorization using local id type
-_(summary pending)_
+
+This case demonstrates the `Local` token type, used when a station generates or accepts an identifier produced by a locally integrated system rather than the CSMS — the canonical example being a parking-garage ticket that doubles as the charging credential. The Charging Station forwards the locally typed token to the CSMS in an `Authorize` request for validation, and a separate payment kiosk later triggers the stop via the CSMS. The interface between the local payment/parking system and the CSMS is outside OCPP scope.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: VENDOR-INTEGRATION** — The protocol and semantics between the local identifier source (e.g. parking kiosk/barrier) and the CSMS are not defined by OCPP and must be agreed between the site integrator and the CSMS operator.
 
 ### C07 — Authorization using Contract Certificates
-_(summary pending)_
+
+ISO 15118 Plug & Charge authorization: the EV presents a contract certificate and eMAID, and the Charging Station passes the eMAID together with the certificate hash data (and, when it cannot validate the chain itself, the full PEM chain) to the CSMS in an `Authorize` request. The CSMS verifies the certificate chain via real-time or cached OCSP and returns both an authorization status for the eMAID and a certificate status, so the response distinguishes "certificate revoked/expired" from "identity not allowed." When offline, the station falls back to local validation (Local Authorization List, Authorization Cache, or unknown-id handling) depending on its configuration.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must set offline contract-validation behavior (`ContractValidationOffline`, `CentralContractValidationAllowed`, `LocalAuthorizeOffline`, `OfflineTxForUnknownIdEnabled`) and the OCSP strategy (real-time vs. cached), which together determine whether Plug & Charge works while disconnected.
 
 ### C08 — Authorization at EVSE using ISO 15118 External Identification Means (EIM)
-_(summary pending)_
+
+In an ISO 15118 session where the driver authorizes by external means (EIM) rather than a contract certificate — for instance an RFID card, app, or PIN applied at the EVSE — the Charging Station sends the resulting identifier to the CSMS in an `Authorize` request and the CSMS responds. The mechanics are identical to the other C-block identification means; the only distinguishing factor is that 15118 communication is present. Identification may happen before plugging in or shortly after (with a bounded time-out for the latter).
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS)
 
 ### C09 — Authorization by GroupId
-_(summary pending)_
+
+GroupId lets two drivers with different tokens act on the same session — for example a couple sharing one car, each with their own RFID card. When the CSMS authorizes a token it returns the associated `groupIdToken`, which the Charging Station stores alongside the token's authorization info. A second token that resolves to the same group is then allowed to stop (or otherwise act on) a transaction the first token started. The mechanism also works against the Authorization Cache, since the group id is cached too.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
 
 ### C10 — Store Authorization Data in the Authorization Cache
-_(summary pending)_
+
+The Charging Station autonomously caches the `IdTokenInfo` of every identifier the CSMS has responded to — whether the data arrived in an `Authorize` response, a `TransactionEvent` response, or a `ReserveNow` request — so that subsequent presentations can be resolved faster or while offline. Cache entries should survive reboots (non-volatile storage), expire according to `AuthCacheLifeTime` or the token's `cacheExpiryDateTime`, and the cache is enabled/disabled by `AuthCacheEnabled`. Personal data should be stored securely, e.g. by hashing tokens, and the `additionalInfo` field is not cached.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must set cache lifetime (`AuthCacheLifeTime`) and decide on secure storage of personal data (e.g. hashing tokens), balancing offline availability against privacy/data-retention requirements.
 
 ### C11 — Clear Authorization Data in Authorization Cache
-_(summary pending)_
+
+The CSMS can purge a station's Authorization Cache by sending a `ClearCache` request; the station attempts to clear all cached identifiers and reports the outcome. It returns `Accepted` on success and `Rejected` if it could not clear the cache or if the cache is disabled (`AuthCacheEnabled` is false).
+
+**Messages:** [ClearCache](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#clearcache) (CSMS → CS)
 
 ### C12 — Start Transaction - Cached Id
-_(summary pending)_
+
+While online, a station with `LocalPreAuthorize` and `AuthCacheEnabled` set can start a transaction immediately for a token it finds cached as `Accepted`, skipping the `Authorize` round-trip for faster response. It opens the session and reports it via `TransactionEvent`; because that response also carries current `IdTokenInfo`, the station learns if the token has since become invalid and may, per `MaxEnergyOnInvalidId`/`StopTxOnInvalidId`, stop the energy offer or the transaction. Tokens belonging to the `MasterPassGroupId` are never allowed to start a transaction.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must configure how a now-invalid cached token is handled mid-session (`MaxEnergyOnInvalidId`, `StopTxOnInvalidId`), trading faster local start against the risk of delivering energy to a token the CSMS would reject.
 
 ### C13 — Offline Authorization through Local Authorization List
-_(summary pending)_
+
+When the station cannot reach the CSMS, it can still authorize a presented token by consulting the Local Authorization List — a CSMS-synchronized list of identifiers and their authorization status. If the token is present with status `Accepted`, charging is allowed offline. Where both a Local Authorization List and an Authorization Cache exist, list entries take priority over cache entries for the same identifier. Expiry handling depends on whether the list supports `cacheExpiryDateTime` and on `OfflineTxForUnknownIdEnabled`.
+
+**Messages:** [SendLocalList](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-LocalAuthList.md#sendlocallist) (CSMS → CS), [GetLocalListVersion](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-LocalAuthList.md#getlocallistversion) (CSMS → CS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must decide which identifiers populate the Local Authorization List and the offline policy (`LocalAuthListEnabled`, `OfflineTxForUnknownIdEnabled`), which governs who can charge when connectivity is lost.
 
 ### C14 — Online Authorization through Local Authorization List
-_(summary pending)_
+
+Even while online, a station with `LocalPreAuthorize` enabled can authorize a token directly from the Local Authorization List without sending an `Authorize` request, provided the token is present with status `Accepted` (and any `cacheExpiryDateTime` has not passed). If the token is unknown or not `Accepted`, the station falls back to sending an `Authorize` request to the CSMS. As in the offline case, list entries take priority over cache entries for the same identifier.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS), [SendLocalList](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-LocalAuthList.md#sendlocallist) (CSMS → CS), [GetLocalListVersion](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-LocalAuthList.md#getlocallistversion) (CSMS → CS)
 
 ### C15 — Offline Authorization of unknown Id
-_(summary pending)_
+
+This covers presenting a token the offline station has never seen — absent from both the Local Authorization List and the Authorization Cache. If `OfflineTxForUnknownIdEnabled` is `true` the station accepts the unknown token and starts charging; if `false` it rejects it. When connectivity returns, the station reports any such offline-authorized transaction to the CSMS, which may then confirm or reject it; on rejection the station's later behavior (continue, cap energy via `MaxEnergyOnInvalidId`, or stop and deauthorize) depends on `StopTxOnInvalidId` and the configured `TxStopPoint`. It applies to all identifier types, including eMAIDs from ISO 15118 contract certificates.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must decide, via `OfflineTxForUnknownIdEnabled` (and `StopTxOnInvalidId`/`MaxEnergyOnInvalidId`), whether to grant energy to wholly unknown tokens during outages, accepting the revenue/fraud risk if the CSMS later rejects them.
 
 ### C16 — Stop Transaction with a Master Pass
-_(summary pending)_
+
+A Master Pass lets an authorized holder — typically law-enforcement or emergency personnel — stop ongoing transactions and release the cable. The holder presents a token whose group equals the configured `MasterPassGroupId`; the station validates it with the CSMS via `Authorize`, and the response's group id confirms Master Pass status. If the station has a UI, the holder selects which transactions to stop; otherwise all ongoing transactions are stopped. Each stopped session is reported with a `TransactionEvent` (`Ended`, stop reason `MasterPass`). Master Pass tokens may never start a transaction.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator must define and provision the `MasterPassGroupId` and decide who is issued Master Pass tokens, since these grant the power to terminate any driver's session.
 
 ### C17 — Authorization with prepaid card
-_(summary pending)_
+
+A variant of RFID authorization (C01) for accounts carrying a prepaid balance. The station always sends an `Authorize` request (prepaid tokens must not be cached, so the CSMS can check the live balance) and the CSMS returns `Accepted` with a positive balance, `NoCredit` when the balance is zero/negative, or `Invalid`; in all cases `cacheExpiryDateTime` is set to now so the token does not persist in the cache. When the transaction starts, the CSMS returns a `transactionLimit.maxCost` equal to the remaining credit in the `TransactionEvent` response, and the station enforces that ceiling so no more energy is delivered than the balance covers.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The CSMS operator must support prepaid accounts and define how the remaining balance maps to `transactionLimit.maxCost`, including any reserve/margin applied to avoid overdraw.
 
 ### C18 — Authorization using locally connected payment terminal
-_(summary pending)_
+
+A driver pays with a bank card at a payment terminal built into the Charging Station. The terminal asks the Payment Service Provider (PSP) to authorize a hold for the amount in `PaymentCtrlr.AuthorizationAmount`, and the PSP returns an approval plus a unique reference (the `PspRef`). The station uses that `PspRef` as an `idToken` of type `DirectPayment`, with card details (card BIN, last four digits, etc.) carried in `additionalInfo`. If `PaymentCtrlr.AuthorizeDirectPayment` is false the station authorizes locally against a default ad-hoc tariff; if true it sends an `Authorize` request so the CSMS can accept (optionally supplying a tariff) or reject. The started transaction is reported via `TransactionEvent` with `transactionLimit.maxCost` set to the authorized hold. A VAT number entered by the driver can optionally be validated with `VatNumberValidation` before settlement.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [VatNumberValidation](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#vatnumbervalidation) (CS → CSMS)
+
+> **ESCALATE: PSP-INTEGRATION** — The protocol between the integrated payment terminal and the PSP, and between the terminal and the Charging Station, is out of OCPP scope and must be defined by the terminal/station vendor and the chosen PSP.
+
+> **ESCALATE: PRICING-POLICY** — The operator must set the pre-authorization hold amount (`PaymentCtrlr.AuthorizationAmount`), the default ad-hoc tariff, and whether CSMS-side authorization (`AuthorizeDirectPayment`) is used to apply non-default tariffs or reject cards.
+
+> **ESCALATE: REGULATORY** — VAT-number handling on receipts (whether collected, validated, and printed) depends on local tax legislation and operator policy.
 
 ### C19 — Cancellation prior to transaction
-_(summary pending)_
+
+After an ad-hoc payment card has been authorized but before any OCPP transaction starts — the driver cancels, or never plugs in and the EV-connection timeout fires — the held amount must be released. The payment terminal asks the PSP to release the authorization reservation, and the station ends the `DirectPayment` token's authorization. If `PaymentCtrlr.AuthorizeDirectPayment` is true (so the CSMS knew about the token), the station sends a `NotifySettlement` with the `PspRef` and status `Canceled` so the CSMS knows the token will not be charged; if false, the CSMS was never told about the token and receives no notification.
+
+**Messages:** [Authorize](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md#authorize) (CS → CSMS), [NotifySettlement](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#notifysettlement) (CS → CSMS)
+
+> **ESCALATE: PSP-INTEGRATION** — Releasing the authorization hold is performed via the terminal/PSP interface, which is outside OCPP scope.
 
 ### C20 — Cancellation after start of transaction
-_(summary pending)_
+
+Like C19 but the OCPP transaction has already started, though no energy was delivered and no other cost (e.g. reservation fee) was incurred. The driver cancels (or the EV-connection timeout fires); the station ends the transaction with a `TransactionEvent` (`Ended`, trigger `StopAuthorized` or `EVConnectTimeout`) reporting `totalCost` = 0, instructs the terminal to release the hold via the PSP, and sends a `NotifySettlement` with the transaction id, the `DirectPayment` `PspRef`, and status `Canceled`. When local cost calculation is used, the ending `TransactionEvent` also carries cost details showing zero cost/usage.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [NotifySettlement](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#notifysettlement) (CS → CSMS)
+
+> **ESCALATE: PSP-INTEGRATION** — Releasing the authorization hold via the terminal/PSP is outside OCPP scope.
 
 ### C21 — Settlement at end of transaction
-_(summary pending)_
+
+When an ad-hoc transaction ends, the final cost is settled against the held card amount and a receipt is produced. The station ends the transaction with a `TransactionEvent` carrying cost details, then either: (a) instructs the integrated terminal to settle the actual cost with the PSP and sends a `NotifySettlement` (`Settled`, with settlement amount/time, transaction id and `PspRef`, optionally VAT number/company) — the receipt URL coming back either from the CSMS in the `NotifySettlement` response (`ReceiptByCSMS` true) or from the terminal; or (b) when `SettlementByCSMS` is true, the CSMS settles directly with the PSP, bypassing the terminal and providing the receipt out of band. Showing a receipt is problematic when `TxStopPoint` is `ParkingBayOccupancy`, since the driver may have already left.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS), [NotifySettlement](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#notifysettlement) (CS → CSMS)
+
+> **ESCALATE: SETTLEMENT-CHANNEL** — The operator must choose where settlement happens (terminal-to-PSP vs. CSMS-to-PSP via `PaymentCtrlr.SettlementByCSMS`) and who generates the receipt (`ReceiptByCSMS`), since these determine the money flow and reconciliation path.
+
+> **ESCALATE: REGULATORY** — Receipt content and delivery, including VAT number/company details and how a driver who has already left retrieves a receipt, depend on tax law and operator policy.
 
 ### C22 — Settlement is rejected or fails
-_(summary pending)_
+
+Settlement of an ad-hoc payment can be declined by the PSP (`Rejected`) or fail for technical reasons such as a communication breakdown (`Failed`). In either case the station notifies the CSMS with a `NotifySettlement` carrying the transaction id, the `DirectPayment` token, settlement amount and time, the appropriate status, and optional error detail in `statusInfo` — but no receipt information. On failure the operator can later attempt to capture the amount by contacting the PSP directly using the `PspRef` (the value of the `idToken`).
+
+**Messages:** [NotifySettlement](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#notifysettlement) (CS → CSMS)
+
+> **ESCALATE: SETTLEMENT-CHANNEL** — The operator must define the recovery process for rejected/failed settlements (e.g. manual capture with the PSP via the `PspRef`), which OCPP only reports but does not resolve.
 
 ### C23 — Increasing authorization amount
-_(summary pending)_
+
+For long or expensive ad-hoc sessions, the initial card hold (`PaymentCtrlr.AuthorizationAmount`) may be insufficient. If incremental authorization is supported — `PaymentCtrlr.IncrementalAuthorizationAmount` is greater than zero — the station monitors accrued cost and, once it approaches the current hold minus `PaymentCtrlr.IncrementalAuthorizationThreshold`, instructs the terminal to extend the hold by the incremental amount and raises the transaction's `transactionLimit.maxCost` accordingly, reporting the change in a `TransactionEvent` (trigger `LimitChanged`/`LimitSet`). If the incremental amount is zero or absent, energy flow halts when `maxCost` is reached.
+
+**Messages:** [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: PRICING-POLICY** — The operator must set the incremental hold amount and threshold (`PaymentCtrlr.IncrementalAuthorizationAmount`, `IncrementalAuthorizationThreshold`), balancing uninterrupted charging against the size of the card pre-authorization.
+
+> **ESCALATE: PSP-INTEGRATION** — Extending the authorization hold is performed via the terminal/PSP interface, which is outside OCPP scope.
 
 ### C24 — Ad hoc payment via stand-alone payment terminal
-_(summary pending)_
+
+Here the payment terminal/kiosk is a separate unit serving several Charging Stations, with no direct connection to any individual station. The driver pays at the kiosk, the kiosk gets PSP approval and a `PspRef`, and the kiosk forwards station/EVSE identity and card details to the CSMS. The CSMS then remotely starts the session with a `RequestStartTransaction` using an `idToken` of value `<PspRef>` and type `DirectPayment`, and the flow continues like a remote start with cost limit (F07). At the end, cost is settled — locally or centrally — and settled with the PSP either via the kiosk or directly by the CSMS, with the receipt optionally surfaced to the driver via a display message. The kiosk-to-CSMS interface is out of OCPP scope.
+
+**Messages:** [RequestStartTransaction](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#requeststarttransaction) (CSMS → CS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: PSP-INTEGRATION** — The protocol between the stand-alone kiosk and both the PSP and the CSMS is not specified by OCPP and must be defined by the kiosk/CSMS vendors.
+
+> **ESCALATE: SETTLEMENT-CHANNEL** — The operator must choose whether final cost is calculated locally or centrally and whether settlement with the PSP is done by the kiosk or directly by the CSMS.
 
 ### C25 — Ad hoc payment via a QR code
-_(summary pending)_
+
+For stations with no payment terminal at all, ad-hoc payment can be offered through a QR code linking to a payment web page. A dynamic QR code embeds a time-based one-time password and the station/EVSE identity in a URL template (`WebPaymentsCtrlr.URLTemplate`); the driver scans it, the CSMS validates the one-time password, optionally sends a `NotifyWebPaymentStarted` so the station can block a local start during the web-payment window, then redirects the driver to the PSP. After approval the PSP returns a `PspRef`, and the CSMS remotely starts the session with a `RequestStartTransaction` using `idToken` `<PspRef>` of type `DirectPayment`, continuing as a remote start with cost limit. A static QR code (a sticker) works similarly but is vulnerable to a fraudulent sticker being pasted over it, so dynamic codes are recommended. Final cost is settled with the PSP by the CSMS, and a receipt URL can be pushed to the station display.
+
+**Messages:** [NotifyWebPaymentStarted](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#notifywebpaymentstarted) (CSMS → CS), [RequestStartTransaction](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md#requeststarttransaction) (CSMS → CS), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent) (CS → CSMS)
+
+> **ESCALATE: PSP-INTEGRATION** — The payment web page, its URL format, the CSMS-to-PSP communication, and receipt delivery are out of OCPP scope and chosen by the operator (CSO), optionally involving an EMSP.
+
+> **ESCALATE: SECURITY-POLICY** — The operator must decide between static and dynamic QR codes; static stickers are susceptible to spoofing, so dynamic codes with a time-based one-time password are recommended.
 
 ---
 

@@ -10,7 +10,7 @@
 
 This document catalogs the use cases of the OCPP 2.1 Edition 2 Part 2 specification (functional blocks A–S). Each entry is an **original summary** — a short restatement of what the use case does in original wording, **not verbatim spec prose** (the OCA specification is CC BY-ND licensed). Its dominant confidence tier is **spec-knowledge** for the behavioral description of each use case; the **message names** referenced in each entry are **schema-derived**, cross-referenced against the per-block schema references listed below, all mechanically extracted from the official OCA artifacts.
 
-This document will contain escalation points marked with `> **ESCALATE:**`. When an AI agent encounters one, it MUST stop and ask the developer (or relevant stakeholder) to make the decision. The escalation count will be finalized when the per-use-case summaries are authored. See [METHODOLOGY.md](../METHODOLOGY.md) for the full confidence and escalation model.
+This catalog contains **102 escalation points** marked with `> **ESCALATE:**` — each flags a decision the spec leaves to the operator, vendor, or grid/market context. When an AI agent encounters one, it MUST stop and ask the developer (or relevant stakeholder) to make the decision. See [METHODOLOGY.md](../METHODOLOGY.md) for the full confidence and escalation model.
 
 Each catalog entry below will list:
 - **Purpose** — what the use case accomplishes.
@@ -734,14 +734,10 @@ New in OCPP 2.1: the CSMS queries which tariffs are currently present on a Charg
 
 **Messages:** [GetTariffs](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#gettariffs)
 
-> **ESCALATE: NONE** — Diagnostic/read-only query; no operator policy decision is required.
-
 ### I10 — Local Cost Calculation - Clear Tariffs
 New in OCPP 2.1: the CSMS removes one or more default tariffs from a Charging Station. ClearTariffs can target specific `tariffIds`, a specific `evseId`, both, or neither (clear all). Driver-specific tariffs are not cleared by this message — they are removed automatically when no longer in use. A default tariff that is currently in use by an active transaction is reported as cleared but continues to be applied until that transaction ends, so running sessions are never disrupted.
 
 **Messages:** [ClearTariffs](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md#cleartariffs)
-
-> **ESCALATE: NONE** — Tariff lifecycle management; the protocol fully specifies the clearing and in-use behaviour, so no policy decision is left open.
 
 ### I11 — Local Cost Calculation - Change transaction tariff
 New in OCPP 2.1: the CSMS swaps the tariff associated with an ongoing transaction, for example to handle an unexpected price change. ChangeTransactionTariff targets a `transactionId` (the change is bound to the transaction, not the driver, since the same driver may have other sessions that should not change). The station validates the new tariff and may reject with reasons such as `TooManyElements`, `ConditionNotSupported`, `NoCurrencyChange` (currency cannot switch mid-transaction) or `TxNotFound`. On acceptance the new tariff applies from that moment forward with no retroactive recalculation, and the station emits a transaction event marking the change.
@@ -1347,7 +1343,7 @@ The remote-initiated counterpart of S01: the driver triggers the swap from a sma
 
 This use case records the physical exchange. In the default In-Out order the driver (or swapping machinery) first inserts the depleted pack(s) into empty slot(s), and the station sends `BatterySwap` with `eventType = BatteryIn`, the shared `requestId`, the authorized `idToken`, and a `batteryData` entry per pack (slot `evseId`, `serialNumber`, `SoC`, `SoH`); it then reports each slot's connector as `Occupied` via `NotifyEvent`. The station then offers charged pack(s); when the driver takes them out the station sends a second `BatterySwap` with `eventType = BatteryOut`, the same `requestId` and the data of the extracted pack(s), and reports those slots `Available`. If a charged pack offered after the BatteryIn is not collected within `BatterySwapOutTimeout`, the station sends a `BatterySwap` with `eventType = BatteryOutTimeout` so the CSMS does not retain an orphan BatteryIn with no matching BatteryOut. A station that swaps in the reverse order reports `BatterySwapCtrlr.SwapOrder = Out-In`. The `BatterySwapResponse` has no rejection status, so a CSMS that needs to reject an inserted pack must use the `org.openchargealliance.batteryswapresponse` customData extension.
 
-**Messages:** [BatterySwap](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
+**Messages:** [BatterySwap](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent), [TransactionEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md#transactionevent)
 
 > **ESCALATE: VENDOR-EXTENSION** — Rejecting an inserted battery requires the bilateral `org.openchargealliance.batteryswapresponse` customData extension (reason codes such as `BatterySoHLow`, `BatteryDamaged`, `BatteryUnknown`); whether a station implements it is a vendor decision flagged via `CustomizationCtrlr.CustomImplementationEnabled`.
 

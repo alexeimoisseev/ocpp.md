@@ -960,16 +960,30 @@ New in OCPP 2.1: a `Dynamic` profile whose `limit`/`setpoint` is updated not by 
 ## L. Firmware Management
 
 ### L01 — Secure Firmware Update
-_(summary pending)_
+
+The CSMS schedules a signed firmware upgrade by sending an `UpdateFirmwareRequest` that carries the download URI, a scheduled retrieval time, the manufacturer signing certificate, and a digital signature. The charging station waits until the scheduled time, downloads the image, verifies the certificate chain against the installed manufacturer root, and then validates the firmware signature before installing. Each phase is reported back through `FirmwareStatusNotification`: Downloading → Downloaded → SignatureVerified → Installing → Installed. If certificate validation fails the station reports `InvalidCertificate` and also emits a `SecurityEventNotification`; a signature mismatch yields `InvalidSignature` with the same security event, and the upgrade is aborted in both cases.
+
+**Messages:** [UpdateFirmwareRequest](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Firmware.md#updatefirmware), [FirmwareStatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Firmware.md#firmwarestatusnotification)
 
 ### L02 — Non-Secure Firmware Update
-_(summary pending)_
+
+The CSMS schedules a firmware upgrade without requiring a manufacturer certificate or digital signature. The `UpdateFirmwareRequest` carries only the download URI and a scheduled retrieval time; the charging station downloads and installs the image without any cryptographic verification step. Progress is reported through `FirmwareStatusNotification` with states Downloading → Downloaded → Installing → Installed (the `SignatureVerified` state does not appear because no signature check is performed). This variant is intended for deployments that rely on transport-layer security alone rather than end-to-end firmware signing.
+
+**Messages:** [UpdateFirmwareRequest](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Firmware.md#updatefirmware), [FirmwareStatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Firmware.md#firmwarestatusnotification)
+
+> **ESCALATE: SECURITY-POLICY** — Choosing between secure (L01) and non-secure (L02) firmware update is a CSO security-policy decision; operators must decide which update path is permitted in their deployment.
 
 ### L03 — Publish Firmware file on Local Controller
-_(summary pending)_
+
+When a fleet of charging stations shares a Local Controller on a common LAN, the CSMS can reduce WAN traffic by pre-staging the firmware on the controller. The CSMS sends a `PublishFirmwareRequest` to the Local Controller specifying the remote firmware URI, an MD5 checksum, and an optional retry count. The controller downloads the file, verifies the MD5 checksum, and then makes the image available over HTTP/HTTPS/FTP on the local network. Each phase is reported to the CSMS via `PublishFirmwareStatusNotification` with states Downloading → Downloaded → ChecksumVerified → Published; failure paths yield DownloadFailed, InvalidChecksum, or PublishFailed. Once the status reaches Published, the notification includes the local URI(s) so the CSMS can redirect individual charging stations to the on-site copy using L01 or L02.
+
+**Messages:** [PublishFirmwareRequest](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Firmware.md#publishfirmware), [PublishFirmwareStatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Firmware.md#publishfirmwarestatusnotification)
 
 ### L04 — Unpublish Firmware file on Local Controller
-_(summary pending)_
+
+Once a staged firmware image is no longer needed, the CSMS can remove it from the Local Controller by sending an `UnpublishFirmwareRequest` identified by the MD5 checksum of the image. The controller removes the file and responds with `UnpublishFirmwareResponse`; the status is `Unpublished` on success, `NoFirmware` if no matching file was found, or `Downloading` if a charging station is currently retrieving that image — in the last case the controller deliberately withholds deletion to avoid interrupting an in-progress update.
+
+**Messages:** [UnpublishFirmwareRequest](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Firmware.md#unpublishfirmware)
 
 ---
 

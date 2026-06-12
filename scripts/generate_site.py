@@ -470,6 +470,17 @@ SITE_CSS = """\
     border: 1px solid var(--border-light);
   }
 
+  /* Wide (6+ column) tables break out of the 800px reading column on larger
+     screens so every column fits without cramped horizontal scrolling.
+     Centred on the viewport; falls back to in-column scrolling below 1024px. */
+  @media (min-width: 1024px) {
+    .table-wrap--wide {
+      width: min(96vw, 1280px);
+      margin-left: 50%;
+      transform: translateX(-50%);
+    }
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
@@ -491,7 +502,6 @@ SITE_CSS = """\
     letter-spacing: 0.03em;
     text-transform: uppercase;
     border-bottom: 1px solid var(--border);
-    white-space: nowrap;
   }
 
   td {
@@ -840,13 +850,21 @@ def _slugify(value, separator):
 # ---------------------------------------------------------------------------
 
 def wrap_tables(body: str) -> str:
-    """Wrap <table> elements in <div class="table-wrap">."""
-    return re.sub(
-        r'(<table.*?</table>)',
-        r'<div class="table-wrap">\1</div>',
-        body,
-        flags=re.DOTALL,
-    )
+    """Wrap <table> elements in <div class="table-wrap">.
+
+    Tables with many columns (>= 6 header cells) are also tagged
+    `table-wrap--wide` so the stylesheet can let them break out of the fixed
+    reading column and use more horizontal space (e.g. the device-model
+    Component x Variable matrix), avoiding cramped horizontal scrolling.
+    """
+    def _wrap(match):
+        table = match.group(1)
+        thead = re.search(r"<thead>.*?</thead>", table, re.DOTALL)
+        ncols = len(re.findall(r"<th\b", thead.group(0))) if thead else 0
+        cls = "table-wrap table-wrap--wide" if ncols >= 6 else "table-wrap"
+        return f'<div class="{cls}">{table}</div>'
+
+    return re.sub(r'(<table.*?</table>)', _wrap, body, flags=re.DOTALL)
 
 
 def add_heading_anchors(body: str) -> str:

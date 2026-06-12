@@ -1,6 +1,6 @@
 # OCPP.md — Open Charge Point Protocol Reference
 
-> A structured OCPP reference for AI agents and developers building EV charging infrastructure. Covers **OCPP 2.0.1** and **OCPP 1.6J** with field-level message schemas, sequence diagrams, smart charging deep-dives, and explicit markers for every place the spec leaves a decision to you.
+> A structured OCPP reference for AI agents and developers building EV charging infrastructure. Covers **OCPP 2.1**, **OCPP 2.0.1** and **OCPP 1.6J** with field-level message schemas, sequence diagrams, smart charging deep-dives, and explicit markers for every place the spec leaves a decision to you.
 >
 > Source on [GitHub](https://github.com/alexeimoisseev/ocpp.md).
 
@@ -63,6 +63,51 @@ The current specification, recommended for all new deployments. 64 messages orga
 - [Smart Charging Examples](./ocpp-2.0.1/smart-charging/examples/) — Worked examples with full JSON payloads
 - [Smart Charging & ISO 15118](./ocpp-2.0.1/smart-charging/iso15118/) — EV-side schedules, Plug & Charge integration
 - [Charging Profile Generator](./ocpp-2.0.1/smart-charging/generator/) — Interactive tool to build SetChargingProfileRequest payloads
+
+---
+
+## OCPP 2.1
+
+The latest specification (Edition 2, 2025). A structural superset of 2.0.1 — all 64 of its messages are retained plus 27 new ones, for **91 messages** across **19 functional blocks (A–S)**. Adds DER control, bidirectional power transfer (V2X), a first-class tariff & cost model, battery swapping, dynamic charging profiles, periodic event streams, and ISO 15118-20 support.
+
+**Reference docs:**
+
+- [OCPP 2.1 Overview & Migration](./ocpp-2.1/) — Roles, device model, all 91 messages by block, and the 2.0.1 → 2.1 migration guide
+- [Shared Data Types](./ocpp-2.1/data-types/) — Enums and composite types used across messages
+- [Device Model Reference](./ocpp-2.1/device-model/) — Standardized components and variables (82 components, 240 variables)
+- [Standardized Enumerations](./ocpp-2.1/enumerations/) — Connector types, units, security events, reason codes, payment brands, etc.
+
+**Schemas (field-level, generated from OCA JSON schemas):**
+
+- [Security](./ocpp-2.1/schemas/security/) — SecurityEventNotification
+- [Provisioning](./ocpp-2.1/schemas/provisioning/) — BootNotification, GetVariables, SetVariables, Reset
+- [Authorization](./ocpp-2.1/schemas/authorization/) — Authorize, ClearCache
+- [Local Auth List](./ocpp-2.1/schemas/local-auth-list/) — SendLocalList, GetLocalListVersion
+- [Transactions](./ocpp-2.1/schemas/transactions/) — TransactionEvent, GetTransactionStatus
+- [Remote Control](./ocpp-2.1/schemas/remote-control/) — RequestStartTransaction, UnlockConnector, TriggerMessage
+- [Availability](./ocpp-2.1/schemas/availability/) — ChangeAvailability, StatusNotification
+- [Reservation](./ocpp-2.1/schemas/reservation/) — ReserveNow, CancelReservation
+- [Tariff & Cost](./ocpp-2.1/schemas/tariff-and-cost/) — GetTariffs, SetDefaultTariff, CostUpdated, NotifySettlement *(new in 2.1)*
+- [Meter Values](./ocpp-2.1/schemas/meter-values/) — MeterValues
+- [Smart Charging](./ocpp-2.1/schemas/smart-charging/) — SetChargingProfile, UpdateDynamicSchedule, UsePriorityCharging
+- [Firmware](./ocpp-2.1/schemas/firmware/) — UpdateFirmware, PublishFirmware
+- [Certificates](./ocpp-2.1/schemas/certificates/) — InstallCertificate, GetCertificateChainStatus
+- [Diagnostics](./ocpp-2.1/schemas/diagnostics/) — NotifyEvent, GetLog, periodic event streams
+- [Display](./ocpp-2.1/schemas/display/) — SetDisplayMessage
+- [Data Transfer](./ocpp-2.1/schemas/data-transfer/) — DataTransfer
+- [Bidirectional / V2X](./ocpp-2.1/schemas/bidirectional/) — NotifyAllowedEnergyTransfer, AFRRSignal *(new in 2.1)*
+- [DER Control](./ocpp-2.1/schemas/der-control/) — SetDERControl, ReportDERControl, NotifyDERAlarm *(new in 2.1)*
+- [Battery Swap](./ocpp-2.1/schemas/battery-swap/) — BatterySwap, RequestBatterySwap *(new in 2.1)*
+
+**Behavioral & feature docs:**
+
+- [DER Control Deep-Dive](./ocpp-2.1/der-control/) — Control types, curves/setpoints, Get/Set/Clear/Report flow, alarms
+- [Bidirectional Power Transfer / V2X](./ocpp-2.1/bidirectional/) — Operation modes, setpoints, frequency support (AFRR), allowed energy transfer
+- [Tariff, Cost & Payment](./ocpp-2.1/tariff-cost/) — Tariff structure, cost calculation, settlement, ad-hoc/web payment, VAT
+- [Smart Charging Deltas](./ocpp-2.1/smart-charging/) — Dynamic schedules, priority charging, battery swap, periodic event streams
+- [Sequences](./ocpp-2.1/sequences/) — DER setup, dynamic schedule loop, battery swap, web-payment, periodic event stream lifecycle
+- [Use-Case Catalog](./ocpp-2.1/use-cases/) — All 177 Part 2 use cases (A–S) with messages and escalation flags
+- [Certification Profiles](./ocpp-2.1/certification/) — Profile × functional-block matrix (non-normative summary)
 
 ---
 

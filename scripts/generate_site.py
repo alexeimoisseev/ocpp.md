@@ -123,6 +123,7 @@ INDEX_TOC = [
 INDEX_HEADING_IDS = {
     "Why This Exists": "why-this-exists",
     "OCPP 2.0.1": "ocpp-201",
+    "OCPP 2.1": "ocpp-21",
     "OCPP 1.6J": "ocpp-16j",
     "The Escalation Model": "the-escalation-model",
     "Using with AI Agents": "using-with-ai-agents",

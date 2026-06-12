@@ -594,19 +594,44 @@ This use case (new in OCPP 2.1) lets the CSMS cap a remotely started session by 
 ## G. Availability
 
 ### G01 — Report connector AvailabilityState
-_(summary pending)_
+
+Whenever a connector's availability state changes — because a cable was plugged in, unplugged, or a `ChangeAvailability` command was processed — the charging station reports the new state to the CSMS. The preferred method in OCPP 2.1 is a `NotifyEvent` with `component.name = "Connector"`, `variable = "AvailabilityState"`, `actualValue` set to the new state string, and `trigger = Delta`; the older `StatusNotification` is an accepted alternative but is deprecated and will be removed in a future release. An `Unavailable` state set by a `ChangeAvailability` command persists across reboots. When a cable is plugged into one connector on a multi-connector EVSE, the charging station must not report a state change for the other connectors on that EVSE.
+
+**Messages:** [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent), [StatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md#statusnotification)
+
+> **ESCALATE: OPERATOR-CONFIG** — The operator must configure the CSMS to handle both `NotifyEvent` (preferred) and `StatusNotification` (legacy) reports for connector status, since the spec allows charging stations to choose either path during the transition period.
 
 ### G02 — Heartbeat
-_(summary pending)_
+
+A charging station sends a `Heartbeat` to the CSMS at regular intervals configured by `HeartbeatInterval` to confirm it is still online; the interval is set from the `BootNotificationResponse` after a successful registration. The `HeartbeatResponse` carries the CSMS's `currentTime`, which the charging station may use to synchronize its internal clock. Over WebSocket, the heartbeat is not needed to keep the connection alive, but if it is used for clock synchronization it should be sent at least once every 24 hours even when other messages are flowing continuously.
+
+**Messages:** [Heartbeat](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md#heartbeat)
+
+> **ESCALATE: OPERATOR-CONFIG** — The operator must decide the `HeartbeatInterval` value and whether clock synchronization via heartbeat is required; setting the interval too high wastes bandwidth, while too low a value may mask connectivity problems.
 
 ### G03 — Change Availability EVSE/Connector
-_(summary pending)_
+
+The CSMS can set a specific EVSE or connector to `Operative` or `Inoperative` by sending `ChangeAvailability` with an `evse` object identifying the target and the desired `operationalStatus`. If a transaction is in progress on the targeted EVSE, the charging station responds `Scheduled` and applies the change after the transaction ends; otherwise it responds `Accepted` immediately. After the state change takes effect, the charging station reports the new status for each affected connector (and EVSE) via `NotifyEvent` or `StatusNotification`. EVSEs and connectors have independent states, and the set availability persists across reboots.
+
+**Messages:** [ChangeAvailability](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md#changeavailability), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent), [StatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md#statusnotification)
+
+> **ESCALATE: OPERATOR-POLICY** — The operator must define how the CSMS handles `Scheduled` responses — i.e., whether to track pending availability changes, set a timeout, or alert staff — as the protocol does not mandate any follow-up mechanism after the response is received.
 
 ### G04 — Change Availability Charging Station
-_(summary pending)_
+
+This is a station-level variant of G03: omitting the `evse` field in `ChangeAvailability` instructs the charging station to change the availability of the entire unit. When set to `Inoperative`, all operative EVSEs and connectors (those not already `Faulted`) become `Unavailable`; when restored to `Operative`, the charging station reverts all EVSEs and connectors to their individual pre-change states. If any transaction is in progress, the response is `Scheduled` and the change is deferred. The availability state set this way persists across power loss or reboot.
+
+**Messages:** [ChangeAvailability](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md#changeavailability), [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent), [StatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md#statusnotification)
+
+> **ESCALATE: OPERATOR-POLICY** — The operator must decide the maintenance workflow: whether to wait for in-flight transactions to conclude before sending the station-wide `Inoperative` command, and how long to wait before escalating to a forced stop.
 
 ### G05 — Lock Failure
-_(summary pending)_
+
+After an EV driver is authorized and plugs in, if the charging station's cable-retention lock fails to engage, the station must not start energy transfer and must report the hardware fault. The charging station sends a `NotifyEvent` for the `ConnectorPlugRetentionLock` component with `variable = Problem` and `value = True`. The CSMS may optionally surface an alert to the driver (e.g. "cable cannot be locked") through external channels; the charging station itself may show a local notification. A lock failure can also be triggered when unlocking a connector (F05) fails.
+
+**Messages:** [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent)
+
+> **ESCALATE: OPERATOR-POLICY** — The operator must decide how a lock-failure event is handled operationally: whether to automatically set the connector `Inoperative`, dispatch a technician, or notify the driver through a separate channel, as OCPP defines only the fault-reporting step.
 
 ---
 

@@ -1042,49 +1042,98 @@ New in OCPP 2.1, this use case allows a charging station to verify the revocatio
 ## N. Diagnostics
 
 ### N01 — Retrieve Log Information
-_(summary pending)_
+
+The CSMS asks a charging station to upload a log file to a given location by sending `GetLogRequest`, naming a log type (`DiagnosticsLog`, `SecurityLog`, or — new in OCPP 2.1 — `DataCollectorLog`) and an upload URL whose scheme also selects the transfer protocol. The station replies with `GetLogResponse` (`Accepted` with the file name it will use, `Rejected` if no matching log is available, or `AcceptedCanceled` if a new request supersedes an in-progress upload). It then drives the transfer asynchronously, emitting `LogStatusNotificationRequest` messages — `Uploading`, then `Uploaded`, or a failure status such as `UploadFailure`/`PermissionDenied` — all carrying the same `requestId` as the originating request. The file format is unspecified; HTTP(S) is the recommended transport, redirects must not be followed, and basic-auth credentials may be embedded in the URL userinfo. The `DataCollectorLog` type bulk-retrieves high-frequency measurand samples buffered by the DataCollector component, far cheaper than installing a sampling monitor.
+
+**Messages:** [GetLog](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#getlog), [LogStatusNotification](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#logstatusnotification)
+
+> **ESCALATE: BACKEND-INTEGRATION** — The upload endpoint, its transfer protocol, and credential handling (the spec recommends a different basic-auth password than the OCPP connection, and the log store may live outside the CSMS trust chain) are operator/back-end design decisions.
 
 ### N02 — Get Monitoring report
-_(summary pending)_
+
+The CSMS retrieves the monitoring settings currently configured on a charging station by sending `GetMonitoringReportRequest`, optionally narrowed by `monitoringCriteria` (threshold, delta, or periodic monitors) and/or a list of `componentVariables`. The station answers `GetMonitoringReportResponse` with `Accepted`, `NotSupported` (for unsupported criteria), or `EmptyResultSet`, then streams the data back in one or more `NotifyMonitoringReportRequest` messages, each carrying the originating `requestId` and an incrementing `seqNo` starting at 0. Component-variable filtering follows the same wildcard expansion rules used elsewhere in the device model (a missing variable, instance, or connector matches all). In OCPP 2.1 each reported monitor also includes its `eventNotificationType`. The per-message item count is bounded by `ItemsPerMessageGetReport`.
+
+**Messages:** [GetMonitoringReport](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#getmonitoringreport), [NotifyMonitoringReport](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifymonitoringreport)
 
 ### N03 — Set Monitoring Base
-_(summary pending)_
+
+The CSMS activates a preconfigured set of monitors on a charging station by sending `SetMonitoringBaseRequest` with a `monitoringBase` of `All`, `FactoryDefault`, or `HardWiredOnly`; the station replies `SetMonitoringBaseResponse` with `Accepted` or `NotSupported`. `HardWiredOnly` disables all preconfigured monitors and removes custom ones, leaving only firmware hard-wired monitors. `FactoryDefault` reactivates the manufacturer's preconfigured monitors and removes all custom monitors. `All` activates preconfigured monitors while preserving existing custom monitors (including custom monitors created by overriding a preconfigured one). Which concrete monitors each base maps to is defined by the manufacturer.
+
+**Messages:** [SetMonitoringBase](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#setmonitoringbase)
 
 ### N04 — Set Variable Monitoring
-_(summary pending)_
+
+The CSMS installs monitoring triggers on individual variables by sending `SetVariableMonitoringRequest` with a list of `SetMonitoringData` elements, each defining a monitor type — `UpperThreshold`, `LowerThreshold`, `Delta`, `Periodic`, `PeriodicClockAligned`, and (new in 2.1) `TargetDelta`/`TargetDeltaRelative` — a value, and a severity. The station returns `SetVariableMonitoringResponse` with one `SetMonitoringResult` per requested element, reporting per-monitor status: `Accepted` (with a station-generated `id` when none was supplied), `UnknownComponent`, `UnknownVariable`, `UnsupportedMonitorType`, `Duplicate` (a same-type, same-severity monitor already exists on the variable), or `Rejected` (e.g. threshold value outside the variable's min/max, a negative or zero Delta, an attempt to alter a hard-wired monitor, or a conflict with safety monitoring). Supplying an existing `id` replaces that monitor, provided the component/variable still matches; a replaced preconfigured monitor becomes a custom monitor. Monitors persist across reboot and survive firmware updates as long as the variable remains monitor-able. Batch limits come from `ItemsPerMessageSetVariableMonitoring`/`BytesPerMessageSetVariableMonitoring`.
+
+**Messages:** [SetVariableMonitoring](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#setvariablemonitoring)
 
 ### N05 — Set Monitoring Level
-_(summary pending)_
+
+To limit how much monitoring traffic a charging station reports, the CSMS sends `SetMonitoringLevelRequest` with a severity threshold; the station answers `SetMonitoringLevelResponse` with `Accepted` or `Rejected` (severity out of range). Once set, the station only raises `NotifyEventRequest` for monitors whose severity number is less than or equal to the configured level (lower numbers mean higher severity), suppressing less-important events — useful when the communications link must be conserved.
+
+**Messages:** [SetMonitoringLevel](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#setmonitoringlevel)
 
 ### N06 — Clear / Remove Monitoring
-_(summary pending)_
+
+The CSMS removes one or more monitors by sending `ClearVariableMonitoringRequest` with a list of monitor `id`s; the station replies `ClearVariableMonitoringResponse` with a `clearMonitoringResult` per id: `Accepted`, `NotFound` (no such id), or `Rejected` (the monitor cannot be cleared — e.g. a hard-wired monitor). The number of ids per request is bounded by `ItemsPerMessageClearVariableMonitoring`/`BytesPerMessageClearVariableMonitoring`; exceeding either may draw a `CALLERROR` (`OccurenceConstraintViolation` or `FormatViolation`).
+
+**Messages:** [ClearVariableMonitoring](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#clearvariablemonitoring)
 
 ### N07 — Alert Event
-_(summary pending)_
+
+When a threshold or delta monitor trips, the charging station reports it to the CSMS with `NotifyEventRequest`, including only the component/variable/`variableMonitoringId` combinations responsible for the event and the trigger reason (`Alerting` for thresholds and the new `TargetDelta`/`TargetDeltaRelative` types, `Delta` for delta monitors). When a monitored value returns within bounds the station sends a follow-up event with `cleared = true`. The CSMS always answers with an empty `NotifyEventResponse`. Events at or below `OfflineMonitoringEventQueuingSeverity` are queued while the station is offline and delivered on reconnect; higher-severity events triggered while offline may be dropped, so the CSMS must tolerate a `cleared` notification for a condition whose onset it never saw. In OCPP 2.1, hard-wired notifications carry an implementation-defined severity, and threshold modifications/removals have explicit rules for whether a `cleared` event is emitted.
+
+**Messages:** [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent)
 
 ### N08 — Periodic Event
-_(summary pending)_
+
+For monitors of type `Periodic` or `PeriodicClockAligned`, the charging station emits `NotifyEventRequest` at the configured cadence with `trigger = Periodic`, rather than waiting for a threshold breach. `Periodic` counts seconds from when the monitor was set or last fired; `PeriodicClockAligned` aligns to wall-clock boundaries (e.g. a value of 900 fires at :00, :15, :30, :45 each hour). The first or only report part has `seqNo = 0`, the CSMS responds with an empty `NotifyEventResponse`, and offline queuing follows the same `OfflineMonitoringEventQueueingSeverity` rule as N07. For high-frequency periodic monitors the more efficient event-stream mechanism of N11–N15 is preferred.
+
+**Messages:** [NotifyEvent](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyevent)
 
 ### N09 — Get Customer Information
-_(summary pending)_
+
+To satisfy privacy requests, the CSMS retrieves the raw data a charging station holds about a customer by sending `CustomerInformationRequest` with `report = true` and exactly one customer reference — an `idToken`, a `customerCertificate`, or a free-form `customerIdentifier`. The station answers `CustomerInformationResponse` with `Accepted`, `Rejected` (cannot process now), or `Invalid` (zero or more than one reference supplied), then returns the data in one or more `NotifyCustomerInformationRequest` messages (an empty `data` string if nothing is stored), each acknowledged by `NotifyCustomerInformationResponse`. When referencing by certificate, the CSMS must use the same hash algorithm that was used to install it.
+
+**Messages:** [CustomerInformation](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#customerinformation), [NotifyCustomerInformation](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifycustomerinformation)
 
 ### N10 — Clear Customer Information
-_(summary pending)_
+
+This is the erasure counterpart to N09: the CSMS sends `CustomerInformationRequest` with `clear = true` (and `report` either true or false) plus a single customer reference. The station responds `CustomerInformationResponse` (`Accepted`/`Rejected`) and then removes all data it holds about that customer **except** the Local Authorization List — which only the CSMS may change, via `SendLocalListRequest` (see D01) to avoid version conflicts. If `report = true` the cleared data is streamed back in `NotifyCustomerInformationRequest` messages (or one message indicating no data was found); if `report = false` a single notification confirms the data was cleared. Setting both `report` and `clear` to false should be rejected. As with N09, certificate references must use the install-time hash algorithm.
+
+**Messages:** [CustomerInformation](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#customerinformation), [NotifyCustomerInformation](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifycustomerinformation)
+
+> **ESCALATE: PRIVACY-POLICY** — Which data items constitute "customer related data," how erasure is enforced across back-end systems, and how the resulting Local Authorization List update is coordinated are operator/legal-compliance decisions.
 
 ### N11 — Set Frequent Periodic Variable Monitoring
-_(summary pending)_
+
+New in OCPP 2.1, this use case sets up an efficient "event stream" for monitors expected to fire frequently (typically `Periodic`/`PeriodicClockAligned`, but also frequent `Delta` monitors), so that many values can be batched into a single unconfirmed message instead of one `NotifyEventRequest` each. In the CSMS-driven path, `SetVariableMonitoringRequest` carries a `periodicEventStream` element (with `interval` and/or `values` flush parameters) per monitor; after responding with `SetVariableMonitoringResponse`, the station opens a stream for each such monitor by sending `OpenPeriodicEventStreamRequest` (the constant per-monitor data plus the `variableMonitoringId`), which the CSMS accepts or rejects via `OpenPeriodicEventStreamResponse`. A station may also open a stream on its own for hard-wired or preconfigured periodic monitors. The CSMS associates the stream's static fields (variableMonitoringId, trigger=Periodic, eventNotificationType, severity, component, variable) with subsequent stream data. If the CSMS rejects the stream, the station falls back to ordinary `NotifyEventRequest` reporting. See the [Periodic Event Stream Lifecycle](../OCPP-2.1-Sequences/OCPP-2.1-Sequences.md#5-periodic-event-stream-lifecycle) sequence and the [Smart Charging deltas](../OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md) doc.
+
+**Messages:** [SetVariableMonitoring](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#setvariablemonitoring), [OpenPeriodicEventStream](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#openperiodiceventstream), [NotifyPeriodicEventStream](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyperiodiceventstream)
 
 ### N12 — Get Periodic Event Streams
-_(summary pending)_
+
+New in OCPP 2.1, this lets the CSMS recover its inventory of open event streams — needed only if it has lost track of them. The CSMS sends `GetPeriodicEventStreamRequest` (no parameters) and the station replies `GetPeriodicEventStreamResponse` with a list of zero or more `ConstantStreamData` entries, one per currently open stream.
+
+**Messages:** [GetPeriodicEventStream](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#getperiodiceventstream)
 
 ### N13 — Close Periodic Event Streams
-_(summary pending)_
+
+New in OCPP 2.1, this terminates an event stream. The charging station may close a stream at any time: it first flushes all buffered values, then sends `ClosePeriodicEventStreamRequest` with the stream `id` (acknowledged by `ClosePeriodicEventStreamResponse`) and reverts to ordinary `NotifyEventRequest` reporting for that variable. Closing is normally a consequence of the CSMS removing the monitor: a `ClearVariableMonitoringRequest` (N06) that clears a monitor backed by a stream, or a `SetVariableMonitoringRequest` that replaces the monitor without a `periodicEventStream` element, automatically closes the associated stream. See the [Periodic Event Stream Lifecycle](../OCPP-2.1-Sequences/OCPP-2.1-Sequences.md#5-periodic-event-stream-lifecycle) sequence.
+
+**Messages:** [ClosePeriodicEventStream](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#closeperiodiceventstream), [ClearVariableMonitoring](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#clearvariablemonitoring), [SetVariableMonitoring](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#setvariablemonitoring)
 
 ### N14 — Adjust Periodic Event Streams
-_(summary pending)_
+
+New in OCPP 2.1, this lets the CSMS retune how often a stream flushes without tearing it down. The CSMS sends `AdjustPeriodicEventStreamRequest` with the stream `id` and a `params` object carrying new `interval` and/or `values` values; the station answers `AdjustPeriodicEventStreamResponse` with `Accepted` (and changes its `NotifyPeriodicEventStream` cadence accordingly) or `Rejected` if it cannot comply. This pairs with N15.FR.05, where a growing `pending` count signals the CSMS to consider larger or more frequent messages.
+
+**Messages:** [AdjustPeriodicEventStream](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#adjustperiodiceventstream)
 
 ### N15 — Periodic Event Streams
-_(summary pending)_
+
+New in OCPP 2.1, this describes the actual data transfer over an open stream. As a monitor produces values, the charging station buffers each with a timestamp and flushes the buffer once `params.interval` seconds have elapsed since the last flush or once `params.values` values have accumulated, writing them as a `NotifyPeriodicEventStream` message. This message uses the new RPC "SEND" message type — it is unconfirmed: the CSMS does not return a `CALLRESULT`/`CALLERROR`, which allows the station to send without waiting and greatly reduces overhead. Each message carries a `basetime` set to the timestamp of its first value (so that value's offset `t` is 0), a list of `StreamDataElement` entries (value `v` and time offset `t`), and a `pending` count of values buffered but not yet sent. The CSMS recombines this with the monitor's static data (variableMonitoringId, trigger, eventNotificationType, severity, component, variable) to reconstruct what a `NotifyEventRequest` would have carried; the only absent required field, `eventId`, may be assigned any value since it is never sent back. Because there is no reply, the CSMS cannot signal errors over the stream — its only recourse is to clear the associated monitor (N06/N13). See the RPC SEND framing in [Part 4 / the Sequences doc](../OCPP-2.1-Sequences/OCPP-2.1-Sequences.md#5-periodic-event-stream-lifecycle).
+
+**Messages:** [NotifyPeriodicEventStream](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md#notifyperiodiceventstream)
 
 ---
 

@@ -1133,10 +1133,20 @@ When the CSMS needs to update the content or parameters of a message that alread
 ## P. Data Transfer
 
 ### P01 — Data Transfer to the Charging Station
-_(summary pending)_
+
+When the CSMS needs to exchange information with a charging station for a function that falls outside the standardised OCPP message set, it sends `DataTransferRequest` to the station carrying a `vendorId` (a reversed-DNS name uniquely identifying the vendor), an optional `messageId` indicating the specific operation, and an optional free-form `data` payload. The charging station processes the request according to the bilateral agreement with the CSMS vendor and responds with `DataTransferResponse`; if it has no implementation for the specified `vendorId` it must respond `UnknownVendor`, and a `messageId` mismatch yields `UnknownMessageId`. The `Accepted` or `Rejected` meaning of the response status, and the structure of the `data` field, are entirely vendor-specific. Data Transfer is not intended for standard production use and the spec strongly cautions that it risks interoperability with systems that do not support the same extension.
+
+**Messages:** [DataTransfer](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DataTransfer.md#datatransfer)
+
+> **ESCALATE: VENDOR-EXTENSION** — The `vendorId`, `messageId`, and `data` semantics are a bilateral vendor agreement and must be documented separately outside of OCPP; the decision to use Data Transfer at all is a deployment/architecture policy choice.
 
 ### P02 — Data Transfer to the CSMS
-_(summary pending)_
+
+The mirror of P01: when a charging station needs to send information to the CSMS for a function not covered by standard OCPP, it initiates `DataTransferRequest` with its own `vendorId`, an optional `messageId`, and an optional `data` payload. The CSMS responds with `DataTransferResponse`; if it has no implementation for the `vendorId` it responds `UnknownVendor`. As with P01, the interpretation of `Accepted`/`Rejected` and the `data` content are governed entirely by the vendor-specific bilateral agreement, and the payload length is undefined and should be agreed upon by both parties in advance.
+
+**Messages:** [DataTransfer](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DataTransfer.md#datatransfer)
+
+> **ESCALATE: VENDOR-EXTENSION** — Same bilateral vendor agreement requirement as P01; payload length limits should be agreed between the charging station and CSMS vendor before deployment.
 
 ---
 

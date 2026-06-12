@@ -10,7 +10,7 @@
 
 This document covers the OCPP **2.1** sequence flows that are new or changed versus 2.0.1. Its dominant confidence tier is **spec-knowledge** — message ordering and triggers summarized in original wording from the OCPP 2.1 Edition 2 Part 2 specification (blocks K Smart Charging, R DER Control, Q Bidirectional, S Battery Swap, N Diagnostics). All message names, field names, and enum values are **schema-derived** — cross-referenced against the mechanically generated [SmartCharging](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md), [DERControl](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md), [BatterySwap](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md), [TariffAndCost](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md), [RemoteControl](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md), and [Diagnostics](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md) schema docs, plus the [Data Types reference](../OCPP-2.1-DataTypes.md). No spec prose is reproduced verbatim (OCA is CC BY-ND); all text is original.
 
-This document contains **1 escalation point** marked with `> **ESCALATE:**`. See [METHODOLOGY.md](../METHODOLOGY.md) for the confidence and escalation model.
+This document contains **0 escalation points**; the policy decisions touching these flows (e.g. push vs. pull dynamic-schedule updates) are flagged with `> **ESCALATE:**` markers in the companion SmartCharging and DER docs and only cross-referenced here. See [METHODOLOGY.md](../METHODOLOGY.md) for the confidence and escalation model.
 
 **Companion documents:**
 - [OCPP 2.1 Smart Charging deltas](../OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md) — concepts for dynamic schedules, priority charging, battery swap, periodic event streams.
@@ -60,12 +60,12 @@ Coordinates a physical battery exchange. Concept and fields are in the [Smart Ch
 | Step | Sender → Receiver | Message | Trigger/Notes |
 |------|-------------------|---------|---------------|
 | 1 | CSMS → CS | [`RequestBatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#requestbatteryswap) | (Optional initiator) CSMS asks the station to begin a swap for `idToken`, assigning a `requestId`. CS replies `status` = [`GenericStatusEnumType`](../OCPP-2.1-DataTypes.md#genericstatusenumtype). |
-| 2 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | CS reports `eventType` = `BatteryOut` ([`BatterySwapEventEnumType`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswapeventenumtype)) with `batteryData[]` for the removed pack, same `requestId`. |
-| 3 | — | (swap performed) | Depleted pack removed, charged pack inserted. |
-| 4 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | CS reports `eventType` = `BatteryIn` with `batteryData[]` (incl. `soC`, `soH`, `serialNumber`) for the inserted pack, same `requestId`. |
-| 5 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | (Error path) If the expected pack is not inserted in time, CS reports `eventType` = `BatteryOutTimeout`. |
+| 2 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | `eventType` = `BatteryIn` ([`BatterySwapEventEnumType`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswapeventenumtype)): the driver's depleted pack has been inserted **into** the station slot. `batteryData[]` carries `evseId` (slot), `serialNumber`, `soC`, `soH`; CS assigns the `requestId`. Event names are from the station-slot perspective; default swap order is In-Out. |
+| 3 | — | (charged pack offered) | Station presents/charges a charged pack for the driver to collect from the slot. |
+| 4 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | `eventType` = `BatteryOut`: the charged pack has been taken **out** of the station slot by the driver. `batteryData[]` (incl. `serialNumber`, `soC`, `soH`) describes the collected pack; same `requestId` as the `BatteryIn`. |
+| 5 | CS → CSMS | [`BatterySwap`](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md#batteryswap) | (Error path) If the charged pack offered after `BatteryIn` is **not collected** within `BatterySwapOutTimeout`, CS reports `eventType` = `BatteryOutTimeout` with the same `requestId` (otherwise CSMS is left with an orphan `BatteryIn`). |
 
-A CS-initiated swap (no `RequestBatterySwap`) simply starts at step 2; the `requestId` then correlates the `BatteryOut`/`BatteryIn` pair.
+Event names follow the station-slot perspective: `BatteryIn` = a battery placed into a slot, `BatteryOut` = a battery removed from a slot. The spec default order is In-Out (depleted battery in first, charged battery out second); a station using the reverse order reports `BatterySwapCtrlr.SwapOrder` = `Out-In`. A CS-initiated swap (no `RequestBatterySwap`) simply starts at step 2; the `requestId` then correlates the `BatteryIn`/`BatteryOut` pair.
 
 ---
 

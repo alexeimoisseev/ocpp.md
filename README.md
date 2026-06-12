@@ -4,7 +4,7 @@
 
 OCPP specs are hundreds of pages long, full of deliberate gaps where behavior depends on your hardware, your business rules, or your grid operator. AI agents that rely on training data alone will silently fill those gaps with plausible-sounding defaults. OCPP.md makes them stop and ask you instead.
 
-This repository covers **OCPP 2.0.1** (the current spec for new deployments) and **OCPP 1.6J** (the most widely deployed version in the field). It provides field-level message schemas, sequence diagrams, smart charging deep-dives, and explicit escalation markers for every place the spec leaves a decision to you.
+This repository covers **OCPP 2.1** (Edition 2, 2025 — the latest specification), **OCPP 2.0.1** (widely deployed for new infrastructure), and **OCPP 1.6J** (the most widely deployed version in the field). It provides field-level message schemas, sequence diagrams, smart charging deep-dives, and explicit escalation markers for every place the spec leaves a decision to you.
 
 ---
 
@@ -46,6 +46,19 @@ Instead of a vague answer, the agent reads the docs and gives you the precise di
 ---
 
 ## What's Inside
+
+### OCPP 2.1
+
+| Content | Count | Source |
+|---------|-------|--------|
+| Message schemas (field-level) | 91 | Generated from OCA JSON schemas (19 functional blocks, A–S) |
+| Shared data types (enums + composites) | — | Generated from OCA JSON schemas |
+| Device Model component/variable catalog | — | Generated from OCA appendix CSVs |
+| Open-enumeration reference | — | Generated from OCA appendix CSVs |
+| Use-case catalog | 177 | AI-authored from OCA use-case appendix |
+| Feature deep-dives | 5 docs | DER control, V2X/bidirectional power transfer, tariff & cost, smart-charging deltas, message sequences |
+| Certification profiles summary | 1 doc | Core, Security, Smart Charging, DER, V2X profiles |
+| Overview and migration guide | 1 doc | Architecture, functional blocks, migration from 2.0.1 |
 
 ### OCPP 2.0.1
 

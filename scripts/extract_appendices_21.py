@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
-"""Generate OCPP 2.1 device-model and enumeration reference from appendix CSVs."""
+"""
+Generate OCPP 2.1 device-model and open-enumeration reference from appendix CSVs.
+
+Reads:  OCPP-2.1_appendices_csv/*.csv (components, variables, dm_components_vars, + 11 enum files)
+Writes: docs/OCPP-2.1-DeviceModel/OCPP-2.1-DeviceModel.md
+        docs/OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md
+"""
 import csv
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -35,7 +42,7 @@ def md_table(header, rows):
            "| " + " | ".join("---" for _ in header) + " |"]
     for r in rows:
         cells = [(c or "").replace("|", "\\|").replace("\n", " ") for c in r]
-        cells += [""] * (len(header) - len(cells))
+        cells = cells[:len(header)] + [""] * max(0, len(header) - len(cells))
         out.append("| " + " | ".join(cells) + " |")
     return "\n".join(out)
 
@@ -48,7 +55,8 @@ def generate_enums():
         "values. Mechanically generated — see [METHODOLOGY](../METHODOLOGY.md).", ""]
     for fname, title, note in ENUM_FILES:
         if not (CSV_DIR / fname).exists():
-            print(f"  WARN missing {fname}"); continue
+            print(f"  WARN missing {fname}")
+            continue
         h, r = read_csv(fname)
         lines += [f"## {title} ({len(r)})", "", f"> {note}", "", md_table(h, r), ""]
     ENUM_OUT.write_text("\n".join(lines), encoding="utf-8")
@@ -56,6 +64,9 @@ def generate_enums():
 
 
 def main():
+    for name in ("components.csv", "variables.csv", "dm_components_vars.csv"):
+        if not (CSV_DIR / name).exists():
+            sys.exit(f"ERROR: required appendix CSV missing: {CSV_DIR / name}")
     DM_OUT.parent.mkdir(parents=True, exist_ok=True)
     comp_h, comp_r = read_csv("components.csv")
     var_h, var_r = read_csv("variables.csv")

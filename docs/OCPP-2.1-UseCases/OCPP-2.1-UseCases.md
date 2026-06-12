@@ -394,10 +394,18 @@ For stations with no payment terminal at all, ad-hoc payment can be offered thro
 ## D. Local Authorization List Management
 
 ### D01 — Send Local Authorization List
-_(summary pending)_
+
+The CSMS pushes a Local Authorization List to the station so that idTokens can be authorized locally — both while offline and, with pre-authorization enabled, faster while online. The `SendLocalList` message carries a `versionNumber` plus an `updateType` of either `Full` (replace the entire list) or `Differential` (add, update, or delete individual entries: an `AuthorizationData` element with `idTokenInfo` adds or updates it, one without removes it). The station applies the change, stores the new version number, and replies `Accepted`, `Failed`, or `VersionMismatch`; it rejects a differential update whose version is not strictly greater than the stored one. Each request is size-bounded by `ItemsPerMessageSendLocalList`/`BytesPerMessageSendLocalList`, so a large list is sent as an initial `Full` followed by `Differential` chunks, and the list should be held in non-volatile memory across reboots.
+
+**Messages:** [SendLocalList](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-LocalAuthList.md#sendlocallist) (CSMS → CS)
+
+> **ESCALATE: POLICY-DEPENDENT** — The operator decides which idTokens populate the list, how often it is synchronized, and whether differential or full updates are used; OCPP defines the transport but not the membership policy.
 
 ### D02 — Get Local List Version
-_(summary pending)_
+
+To keep the station and CSMS lists in sync without retransmitting the whole list, the CSMS can query the station's current list version with `GetLocalListVersion`; the station replies with the `versionNumber` it currently holds. A returned value of `0` is reserved to mean "no Local Authorization List" — either because `LocalAuthListEnabled` is false or because the CSMS has never sent an update — whereas a list that was deliberately emptied (a `SendLocalList` carrying an empty list) still reports its assigned version greater than `0`. The CSMS typically compares the reported version against its own and issues a `SendLocalList` only when they differ.
+
+**Messages:** [GetLocalListVersion](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-LocalAuthList.md#getlocallistversion) (CSMS → CS)
 
 ---
 

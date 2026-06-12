@@ -990,25 +990,52 @@ Once a staged firmware image is no longer needed, the CSMS can remove it from th
 ## M. Certificate Management
 
 ### M01 — Certificate installation EV
-_(summary pending)_
+
+When an EV supporting ISO 15118 PnC connects and requests a new contract certificate, the charging station intercepts the `CertificateInstallationReq` from the EV and forwards it to the CSMS as a `Get15118EVCertificateRequest` with `action = Install`. The CSMS contacts the appropriate contract certificate pool, assembles the `CertificateInstallationRes` payload, and returns it in `Get15118EVCertificateResponse`. The charging station relays the response to the EV, completing the contract certificate installation without the CSMS needing a direct channel to the vehicle. For ISO 15118-20 sessions the message also carries a `maximumContractCertificateChains` field so the EV can batch-install multiple contracts in a single connection.
+
+**Messages:** [Get15118EVCertificate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#get15118evcertificate)
+
+> **ESCALATE: PKI-INTEGRATION** — Which contract certificate pool(s) the CSMS queries and how the CSMS integrates with external provisioning services are operator/back-end design decisions.
 
 ### M02 — Certificate Update EV
-_(summary pending)_
+
+When an already-provisioned EV detects that its contract certificate is approaching expiry and sends a `CertificateUpdateReq` (ISO 15118-2) or a `CertificateInstallationReq` (ISO 15118-20), the charging station forwards the request to the CSMS as a `Get15118EVCertificateRequest` with `action = Update`. The CSMS retrieves the refreshed certificate payload and returns it via `Get15118EVCertificateResponse`, which the charging station passes back to the EV to replace the expiring certificate. ISO 15118-20 does not distinguish install from update at the protocol level, so the charging station falls back to the M01 flow in that case.
+
+**Messages:** [Get15118EVCertificate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#get15118evcertificate)
 
 ### M03 — Retrieve list of available certificates from a Charging Station
-_(summary pending)_
+
+The CSMS requests an inventory of certificates currently installed in a charging station's trust store by sending `GetInstalledCertificateIdsRequest` with an optional `certificateType` filter. The charging station computes hash data for each matching certificate and returns them in `GetInstalledCertificateIdsResponse`; if no certificates match the filter the response status is `NotFound`. For V2G certificate chains, sub-CA certificates are nested as child entries under the EVSE leaf certificate in the response. The CSMS uses this information to track which roots, intermediate CAs, and leaf certificates are present before deciding whether to install or delete.
+
+**Messages:** [GetInstalledCertificateIds](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#getinstalledcertificateids)
 
 ### M04 — Delete a specific certificate from a Charging Station
-_(summary pending)_
+
+The CSMS removes an individual certificate from a charging station's trust store by sending `DeleteCertificateRequest` with the hash data identifying the target certificate. The charging station attempts deletion and responds with `DeleteCertificateResponse`: `Accepted` on success, `NotFound` if the certificate is not present, or `Failed` if deletion is refused (for example, because it is the last certificate of its type or because it is the station's own TLS identity certificate, which cannot be removed via this path). When deleting a sub-CA or root, the charging station may also remove dependent child certificates.
+
+**Messages:** [DeleteCertificate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#deletecertificate)
+
+> **ESCALATE: LIFECYCLE-POLICY** — The decision about when to remove a root or intermediate CA (e.g., during rotation vs. immediate removal) and whether to allow deletion of the last certificate of a given type is an operator policy decision.
 
 ### M05 — Install CA certificate in a Charging Station
-_(summary pending)_
+
+The CSMS pushes a new root or intermediate CA certificate into a charging station's trust store by sending `InstallCertificateRequest` with the certificate type (CSMS root, MO root, V2G root, Manufacturer root, or others) and the DER-encoded certificate. The charging station validates and installs the certificate and responds with `InstallCertificateResponse`: `Accepted` on success, `Failed` on installation error, or `Rejected` if the certificate store capacity limit would be exceeded. When the `AdditionalRootCertificateCheck` configuration flag is active and a new CSMS root is installed, the existing root is temporarily retained as a fallback to avoid losing connectivity during a root rotation.
+
+**Messages:** [InstallCertificate](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#installcertificate)
+
+> **ESCALATE: ROOT-ROTATION** — The timing and sequencing of CSMS root certificate rotation (including whether to use the fallback mechanism) is an operational procedure that must be coordinated between the CSO and the CSMS operator.
 
 ### M06 — Get V2G Charging Station Certificate status
-_(summary pending)_
+
+ISO 15118 requires the charging station to include OCSP stapling information for its own V2G certificate during the TLS handshake with an EV, but querying an OCSP responder inline is too slow. To satisfy this constraint the charging station periodically fetches and caches the revocation status in advance by sending `GetCertificateStatusRequest` to the CSMS with the OCSP request data for each relevant sub-CA certificate. The CSMS contacts the appropriate OCSP responder, wraps the DER-encoded ASN.1 response, and returns it in `GetCertificateStatusResponse`. The charging station caches the result and refreshes it at least once a week or immediately after installing a new V2G certificate.
+
+**Messages:** [GetCertificateStatus](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#getcertificatestatus)
 
 ### M07 — Get Vehicle Certificate Chain Revocation Status
-_(summary pending)_
+
+New in OCPP 2.1, this use case allows a charging station to verify the revocation status of the full vehicle certificate chain presented by an EV during a PnC session without the station needing direct access to external OCSP responders or CRL distribution points. The station sends `GetCertificateChainStatusRequest` with a list of certificate entries, each specifying hash data, the check source (OCSP or CRL), and the relevant URL(s). The CSMS checks its local cache first (valid for up to one week per ISO 15118-20) and only performs external lookups for entries not already cached; it responds with `GetCertificateChainStatusResponse` containing the status (Good/Revoked/Failed) and a `nextUpdate` timestamp for each certificate. The station caches these results locally and avoids repeat queries for entries whose `nextUpdate` has not expired.
+
+**Messages:** [GetCertificateChainStatus](../OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md#getcertificatechainstatus)
 
 ---
 

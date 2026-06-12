@@ -523,6 +523,21 @@ SITE_CSS = """\
     white-space: nowrap;
   }
 
+  /* --- Device-model entry cards (Component x Variable matrix) --- */
+  .dm-entry {
+    background: var(--bg-table-stripe);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 0.7rem 1rem 0.8rem;
+    margin-bottom: 0.7rem;
+  }
+  .dm-entry > p { margin-bottom: 0.4rem; }
+  .dm-entry > p:first-child { margin-top: 0; }
+  .dm-entry > p:last-child { margin-bottom: 0; }
+  /* the bold variable name + metadata line */
+  .dm-entry > p:first-child { color: var(--text-muted); }
+  .dm-entry > p:first-child strong code { color: var(--text); }
+
   /* --- Lists --- */
   ul, ol {
     padding-left: 1.5rem;
@@ -849,6 +864,21 @@ def _slugify(value, separator):
 # Post-processing
 # ---------------------------------------------------------------------------
 
+def card_matrix_entries(body: str) -> str:
+    """Wrap each device-model Component x Variable entry in a `.dm-entry` card.
+
+    An entry is a bold-variable paragraph (`<p><strong><code>...`) plus its
+    optional following description paragraph. Carding gives each entry a shaded
+    background so items are clearly separated on the website, while the source
+    Markdown stays plain and HTML-free. Scoped to the device-model page.
+    """
+    pattern = re.compile(
+        r'<p><strong><code>.*?</p>(?:\s*<p>(?!<strong><code>).*?</p>)?',
+        re.DOTALL,
+    )
+    return pattern.sub(lambda m: f'<div class="dm-entry">{m.group(0)}</div>', body)
+
+
 def wrap_tables(body: str) -> str:
     """Wrap <table> elements in <div class="table-wrap">.
 
@@ -1160,6 +1190,8 @@ def process_file(source_rel: str, url_path: str):
 
     # Post-process
     body = wrap_tables(body)
+    if url_path == "ocpp-2.1/device-model":
+        body = card_matrix_entries(body)
     body = highlight_json_blocks(body)
     body = rewrite_md_links(body, source_rel, url_path)
 

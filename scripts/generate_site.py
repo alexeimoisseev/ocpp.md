@@ -73,25 +73,22 @@ CONTENT_FILES = [
     ("docs/OCPP-2.1-Sequences/OCPP-2.1-Sequences.md", "ocpp-2.1/sequences"),
     ("docs/OCPP-2.1-UseCases/OCPP-2.1-UseCases.md", "ocpp-2.1/use-cases"),
     ("docs/OCPP-2.1-Certification/OCPP-2.1-Certification.md", "ocpp-2.1/certification"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Authorization.md", "ocpp-2.1/schemas/authorization"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Availability.md", "ocpp-2.1/schemas/availability"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-BatterySwap.md", "ocpp-2.1/schemas/battery-swap"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Bidirectional.md", "ocpp-2.1/schemas/bidirectional"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Certificates.md", "ocpp-2.1/schemas/certificates"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-DERControl.md", "ocpp-2.1/schemas/der-control"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-DataTransfer.md", "ocpp-2.1/schemas/data-transfer"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Diagnostics.md", "ocpp-2.1/schemas/diagnostics"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Display.md", "ocpp-2.1/schemas/display"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Firmware.md", "ocpp-2.1/schemas/firmware"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-LocalAuthList.md", "ocpp-2.1/schemas/local-auth-list"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-MeterValues.md", "ocpp-2.1/schemas/meter-values"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Provisioning.md", "ocpp-2.1/schemas/provisioning"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-RemoteControl.md", "ocpp-2.1/schemas/remote-control"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Reservation.md", "ocpp-2.1/schemas/reservation"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Security.md", "ocpp-2.1/schemas/security"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-SmartCharging.md", "ocpp-2.1/schemas/smart-charging"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-TariffAndCost.md", "ocpp-2.1/schemas/tariff-and-cost"),
-    ("docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-Transactions.md", "ocpp-2.1/schemas/transactions"),
+    # OCPP 2.1 per-block schema pages — generated from glob so none are silently missed.
+    # Slug derivation: strip prefix "OCPP-2.1-Schemas-" and ".md", then camelCase→kebab-case.
+    *[
+        (
+            f"docs/OCPP-2.1-Schemas/{p.name}",
+            "ocpp-2.1/schemas/" + re.sub(
+                r'([a-z0-9])([A-Z])',
+                r'\1-\2',
+                re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1-\2',
+                       p.stem.removeprefix("OCPP-2.1-Schemas-"))
+            ).lower(),
+        )
+        for p in sorted(
+            (Path(__file__).resolve().parent.parent / "docs" / "OCPP-2.1-Schemas").glob("*.md")
+        )
+    ],
 ]
 
 # Mapping: normalized .md source path -> clean URL path (for link rewriting)

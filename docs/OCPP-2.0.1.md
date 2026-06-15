@@ -24,7 +24,7 @@ OCPP enables interoperability: a charge point from vendor A can be managed by a 
 | OCPP 1.6 | Widely deployed | SOAP or WebSocket + JSON | Most common version in the field today |
 | OCPP 2.0 | Superseded | WebSocket + JSON | Major rewrite; never widely deployed |
 | OCPP 2.0.1 | **Current** | WebSocket + JSON | Bugfix/clarification release of 2.0; recommended for new deployments |
-| OCPP 2.1 | In development | WebSocket + JSON | Adds ISO 15118-20, improved tariff support, and more |
+| OCPP 2.1 | **Published (Edition 2, 2025)** | WebSocket + JSON | Adds ISO 15118-20, V2X/bidirectional power transfer, DER control, improved tariffs; see [OCPP-2.1.md](./OCPP-2.1.md) |
 
 ### Companion Documents
 

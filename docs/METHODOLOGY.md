@@ -274,3 +274,117 @@ These documents were written by Claude (Anthropic) referencing the official OCPP
 | `OCPP_1.6_documentation/ocpp-1.6 edition 2.pdf` — prose specification | **Medium** — AI-authored from spec, verify against official document |
 | `OCPP_1.6_documentation/ocpp-1.6-errata-sheet.pdf` — errata | Referenced where relevant |
 | `OCPP_1.6_documentation/ocpp-j-1.6-specification.pdf` — JSON transport spec | Referenced for message framing |
+
+---
+
+# Part 4: OCPP 2.1 Documentation
+
+OCPP 2.1 (Edition 2, published 2025 by the Open Charge Alliance) uses the same two-category approach as the other versions: mechanically extracted schema references for high-confidence structural data, and AI-authored deep-dive documents for semantic understanding.
+
+## Schema Documentation (Mechanically Generated)
+
+### Source Material
+
+Two separate extractors cover distinct parts of the OCPP 2.1 specification:
+
+**Extractor 1 — JSON schema files (`scripts/extract_schemas_21.py`)**
+
+The input is the **official OCA JSON Schema files** for OCPP 2.1 — 91 files covering the request/response pairs for all 19 functional blocks (A through S), plus the standalone one-way `NotifyPeriodicEventStream` message (a CS → CSMS SEND with no response). These are published by the Open Charge Alliance alongside the specification and are the same schemas used for production message validation.
+
+**The schema files are not bundled with this repository.** To regenerate or verify the documentation, download the official OCPP 2.1 JSON schemas from the [Open Charge Alliance](https://openchargealliance.org) (free registration required) and place them in `source-specs/OCPP-2.1_all_files/`.
+
+**Extractor 2 — appendix CSVs (`scripts/extract_appendices_21.py`)**
+
+The input is the **official OCA appendix CSV exports** from the OCPP 2.1 specification — the Device Model component/variable catalog and the open-enumeration tables. These are placed in `source-specs/OCPP-2.1_all_files/` alongside the schema files.
+
+### Generation Process
+
+**`scripts/extract_schemas_21.py`** performs a deterministic, fully automated extraction:
+
+1. **Parse** — All 91 `.json` schema files are loaded and parsed.
+2. **Deduplicate types** — The script collects all unique type definitions across files, groups them by name, and verifies identity. Types appearing in 3 or more schema files are placed in `OCPP-2.1-DataTypes.md` as shared types.
+3. **Classify by block** — Messages are assigned to their functional block (A–S). Each block produces one output file.
+4. **Extract message schemas** — For each message, the script extracts top-level `properties` and `required` arrays from both Request and Response schemas (or just Request for one-way SEND messages).
+5. **Clean descriptions** — OCA schema descriptions are cleaned of internal metadata.
+6. **Generate markdown** — Tables, cross-reference links, and example payloads are generated programmatically.
+
+**`scripts/extract_appendices_21.py`** performs a deterministic extraction of the appendix data:
+
+1. **Parse CSVs** — The Device Model component/variable catalog CSV and the open-enumeration CSV are loaded.
+2. **Group and render** — Device Model entries are grouped by component; enumeration entries are grouped by enumeration name.
+3. **Generate markdown** — Produces two output files.
+
+**No manual editing** is applied to the generated files. Every field name, type, required/optional status, enum value, and constraint comes directly from the source files.
+
+### Output Files
+
+| Script | Output |
+|--------|--------|
+| `extract_schemas_21.py` | `docs/OCPP-2.1-DataTypes.md` — shared types and enumerations |
+| `extract_schemas_21.py` | `docs/OCPP-2.1-Schemas/OCPP-2.1-Schemas-<Block>.md` — one file per functional block (A–S), e.g. `OCPP-2.1-Schemas-Provisioning.md`, `OCPP-2.1-Schemas-Diagnostics.md` (which includes `NotifyPeriodicEventStream`) |
+| `extract_appendices_21.py` | `docs/OCPP-2.1-DeviceModel/OCPP-2.1-DeviceModel.md` — full Device Model component/variable catalog |
+| `extract_appendices_21.py` | `docs/OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md` — open-enumeration reference |
+
+### What Is Accurate (High Confidence)
+
+Same guarantees as 2.0.1 and 1.6J: field names, data types, required/optional status, enum values, string/numeric constraints, and date-time format indicators are extracted mechanically from the JSON schemas. The Device Model and enumeration tables are extracted mechanically from the OCA appendix CSVs.
+
+### How to Regenerate
+
+1. Download the official OCPP 2.1 JSON schemas and appendix CSVs from [openchargealliance.org](https://openchargealliance.org) (free registration required).
+2. Place all files in `source-specs/OCPP-2.1_all_files/`.
+3. Run:
+
+```
+python3 scripts/extract_schemas_21.py
+python3 scripts/extract_appendices_21.py
+```
+
+Both scripts are idempotent — running them twice on the same input produces identical output. They overwrite `docs/OCPP-2.1-DataTypes.md`, all files in `docs/OCPP-2.1-Schemas/`, `docs/OCPP-2.1-DeviceModel/OCPP-2.1-DeviceModel.md`, and `docs/OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md`.
+
+## AI-Authored Reference Documents (OCPP 2.1)
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `OCPP-2.1.md` | Overview and migration guide: architecture, all 19 functional blocks, key changes from 2.0.1, migration path |
+| `OCPP-2.1-DERControl/OCPP-2.1-DERControl.md` | DER (Distributed Energy Resource) control deep-dive: grid-edge use cases, DER curve types, CS/CSMS roles, message flows |
+| `OCPP-2.1-Bidirectional/OCPP-2.1-Bidirectional.md` | V2X / bidirectional power transfer deep-dive: V2G, V2H, V2B use cases, ISO 15118-20 integration, BPT profiles |
+| `OCPP-2.1-TariffCost/OCPP-2.1-TariffCost.md` | Tariff and cost deep-dive: tariff structure, price display, cost calculation, driver-facing messaging |
+| `OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md` | Smart charging deltas: what changed from 2.0.1 — new schedule fields, absolute/relative power, dynamic profiles |
+| `OCPP-2.1-Sequences/OCPP-2.1-Sequences.md` | Message sequences: boot, authorization, transaction lifecycle, bidirectional flows |
+| `OCPP-2.1-UseCases/OCPP-2.1-UseCases.md` | 177-use-case catalog: all official OCA use cases across all functional blocks |
+| `OCPP-2.1-Certification/OCPP-2.1-Certification.md` | Certification profiles summary: Core, Security, Smart Charging, DER, V2X profile requirements |
+
+### How These Were Produced
+
+These documents were written by Claude (Anthropic) in a collaborative session with the repository maintainer. The AI model used its training data knowledge of the OCPP 2.1 specification (Edition 2, 2025) to author the content. **No automated extraction from schema files was involved** — the content is editorial, not mechanical.
+
+The same four-tier confidence model applies as for the 2.0.1 AI-authored documents: Schema-derived (high), Schema-described (high), Spec-knowledge (medium), Interpretation (lower). Documents are marked with inline **ESCALATE** markers wherever the specification is ambiguous, silent, vendor-dependent, or policy-dependent.
+
+All original text is authored from scratch to respect the OCA's CC BY-ND license on the specification prose — summaries and explanations are original, not copied from the specification.
+
+### What Is Accurate
+
+- **All enum values, field names, type names, and constraints** match the mechanically generated schema documentation and were cross-referenced during authoring.
+- **Behavioral rules** quoted from schema descriptions are taken directly from OCA schema description text.
+
+### What May Contain Errors
+
+- **OCPP 2.1-specific algorithms** (e.g., DER curve application, BPT schedule merging, composite schedule changes) — general principles are described but the exact normative algorithm is in Part 2 of the specification.
+- **Use-case catalog** — the 177 use cases are derived from the AI model's knowledge of the OCA use-case appendix; verify count and exact names against the official document.
+- **Certification profile requirements** — describe the general profile structure; for authoritative pass/fail criteria consult the OCA OCTT tool and certification documentation directly.
+
+### Relationship to Official Documents
+
+| This project (AI-authored) | Official source |
+|---|---|
+| `OCPP-2.1.md` overview and migration guide | OCPP 2.1 Edition 2 Part 1 & Part 2 (from OCA) |
+| DER control, V2X, tariff, smart-charging deep-dives | OCPP 2.1 Edition 2 Part 2 functional block chapters |
+| Use-case catalog | OCPP 2.1 Edition 2 use-case appendix |
+| Certification profiles | OCA OCPP 2.1 Certification Documentation |
+| Enum values, field names used in text | OCA JSON schemas (verified against mechanically generated docs in this repo) |
+| Worked examples and escalation points | AI-generated guidance (not from any official source) |
+
+**The official OCA specification is the authoritative source for all OCPP behavior.** These AI-authored documents are a practical reference to accelerate understanding, not a replacement for the specification.

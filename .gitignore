@@ -1,6 +1,8 @@
 public/
 __pycache__/
 OCPP-2.0.1_JSON_schemas/
+OCPP-2.1_JSON_schemas/
+OCPP-2.1_appendices_csv/
 OCPP_1.6_documentation/
 .worktrees/
 docs/plans/

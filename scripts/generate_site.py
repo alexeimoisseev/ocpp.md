@@ -61,6 +61,34 @@ CONTENT_FILES = [
     ("docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-RemoteTrigger.md", "ocpp-1.6j/schemas/remote-trigger"),
     ("docs/OCPP-1.6J-Sequences/OCPP-1.6J-Sequences.md", "ocpp-1.6j/sequences"),
     ("docs/OCPP-1.6J-SmartCharging/OCPP-1.6J-SmartCharging.md", "ocpp-1.6j/smart-charging"),
+    # OCPP 2.1
+    ("docs/OCPP-2.1.md", "ocpp-2.1"),
+    ("docs/OCPP-2.1-DataTypes.md", "ocpp-2.1/data-types"),
+    ("docs/OCPP-2.1-DeviceModel/OCPP-2.1-DeviceModel.md", "ocpp-2.1/device-model"),
+    ("docs/OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md", "ocpp-2.1/enumerations"),
+    ("docs/OCPP-2.1-DERControl/OCPP-2.1-DERControl.md", "ocpp-2.1/der-control"),
+    ("docs/OCPP-2.1-Bidirectional/OCPP-2.1-Bidirectional.md", "ocpp-2.1/bidirectional"),
+    ("docs/OCPP-2.1-TariffCost/OCPP-2.1-TariffCost.md", "ocpp-2.1/tariff-cost"),
+    ("docs/OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md", "ocpp-2.1/smart-charging"),
+    ("docs/OCPP-2.1-Sequences/OCPP-2.1-Sequences.md", "ocpp-2.1/sequences"),
+    ("docs/OCPP-2.1-UseCases/OCPP-2.1-UseCases.md", "ocpp-2.1/use-cases"),
+    ("docs/OCPP-2.1-Certification/OCPP-2.1-Certification.md", "ocpp-2.1/certification"),
+    # OCPP 2.1 per-block schema pages — generated from glob so none are silently missed.
+    # Slug derivation: strip prefix "OCPP-2.1-Schemas-" and ".md", then camelCase→kebab-case.
+    *[
+        (
+            f"docs/OCPP-2.1-Schemas/{p.name}",
+            "ocpp-2.1/schemas/" + re.sub(
+                r'([a-z0-9])([A-Z])',
+                r'\1-\2',
+                re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1-\2',
+                       p.stem.removeprefix("OCPP-2.1-Schemas-"))
+            ).lower(),
+        )
+        for p in sorted(
+            (Path(__file__).resolve().parent.parent / "docs" / "OCPP-2.1-Schemas").glob("*.md")
+        )
+    ],
 ]
 
 # Mapping: normalized .md source path -> clean URL path (for link rewriting)
@@ -85,6 +113,7 @@ INDEX_TOC = [
     ("why-this-exists", "Why"),
     ("using-with-ai-agents", "Setup"),
     ("ocpp-201", "2.0.1"),
+    ("ocpp-21", "2.1"),
     ("ocpp-16j", "1.6J"),
     ("the-escalation-model", "Escalation"),
     ("about-this-project", "About"),
@@ -94,6 +123,7 @@ INDEX_TOC = [
 INDEX_HEADING_IDS = {
     "Why This Exists": "why-this-exists",
     "OCPP 2.0.1": "ocpp-201",
+    "OCPP 2.1": "ocpp-21",
     "OCPP 1.6J": "ocpp-16j",
     "The Escalation Model": "the-escalation-model",
     "Using with AI Agents": "using-with-ai-agents",
@@ -440,6 +470,17 @@ SITE_CSS = """\
     border: 1px solid var(--border-light);
   }
 
+  /* Wide (6+ column) tables break out of the 800px reading column on larger
+     screens so every column fits without cramped horizontal scrolling.
+     Centred on the viewport; falls back to in-column scrolling below 1024px. */
+  @media (min-width: 1024px) {
+    .table-wrap--wide {
+      width: min(96vw, 1280px);
+      margin-left: 50%;
+      transform: translateX(-50%);
+    }
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
@@ -461,7 +502,6 @@ SITE_CSS = """\
     letter-spacing: 0.03em;
     text-transform: uppercase;
     border-bottom: 1px solid var(--border);
-    white-space: nowrap;
   }
 
   td {
@@ -482,6 +522,21 @@ SITE_CSS = """\
     font-size: 0.82em;
     white-space: nowrap;
   }
+
+  /* --- Device-model entry cards (Component x Variable matrix) --- */
+  .dm-entry {
+    background: var(--bg-table-stripe);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 0.7rem 1rem 0.8rem;
+    margin-bottom: 0.7rem;
+  }
+  .dm-entry > p { margin-bottom: 0.4rem; }
+  .dm-entry > p:first-child { margin-top: 0; }
+  .dm-entry > p:last-child { margin-bottom: 0; }
+  /* the bold variable name + metadata line */
+  .dm-entry > p:first-child { color: var(--text-muted); }
+  .dm-entry > p:first-child strong code { color: var(--text); }
 
   /* --- Lists --- */
   ul, ol {
@@ -809,14 +864,37 @@ def _slugify(value, separator):
 # Post-processing
 # ---------------------------------------------------------------------------
 
-def wrap_tables(body: str) -> str:
-    """Wrap <table> elements in <div class="table-wrap">."""
-    return re.sub(
-        r'(<table.*?</table>)',
-        r'<div class="table-wrap">\1</div>',
-        body,
-        flags=re.DOTALL,
+def card_matrix_entries(body: str) -> str:
+    """Wrap each device-model Component x Variable entry in a `.dm-entry` card.
+
+    An entry is a bold-variable paragraph (`<p><strong><code>...`) plus its
+    optional following description paragraph. Carding gives each entry a shaded
+    background so items are clearly separated on the website, while the source
+    Markdown stays plain and HTML-free. Scoped to the device-model page.
+    """
+    pattern = re.compile(
+        r'<p><strong><code>.*?</p>(?:\s*<p>(?!<strong><code>).*?</p>)?',
+        re.DOTALL,
     )
+    return pattern.sub(lambda m: f'<div class="dm-entry">{m.group(0)}</div>', body)
+
+
+def wrap_tables(body: str) -> str:
+    """Wrap <table> elements in <div class="table-wrap">.
+
+    Tables with many columns (>= 6 header cells) are also tagged
+    `table-wrap--wide` so the stylesheet can let them break out of the fixed
+    reading column and use more horizontal space (e.g. the device-model
+    Component x Variable matrix), avoiding cramped horizontal scrolling.
+    """
+    def _wrap(match):
+        table = match.group(1)
+        thead = re.search(r"<thead>.*?</thead>", table, re.DOTALL)
+        ncols = len(re.findall(r"<th\b", thead.group(0))) if thead else 0
+        cls = "table-wrap table-wrap--wide" if ncols >= 6 else "table-wrap"
+        return f'<div class="{cls}">{table}</div>'
+
+    return re.sub(r'(<table.*?</table>)', _wrap, body, flags=re.DOTALL)
 
 
 def add_heading_anchors(body: str) -> str:
@@ -1023,7 +1101,7 @@ def build_page(
 
     if not description:
         if is_index:
-            description = "A structured OCPP protocol reference for AI agents and developers working on EV charging infrastructure. Covers OCPP 2.0.1 and 1.6J specifications."
+            description = "A structured OCPP protocol reference for AI agents and developers working on EV charging infrastructure. Covers OCPP 2.1, 2.0.1 and 1.6J specifications."
         else:
             description = f"{title} \u2014 OCPP protocol reference for AI agents."
 
@@ -1036,6 +1114,7 @@ def build_page(
     <h1>Open Charge Point Protocol Reference</h1>
     <p class="subtitle">Schemas, sequences, smart charging, and escalation markers for AI agents and developers.</p>
     <div class="meta">
+      <span><a href="./ocpp-2.1/" style="color: var(--text-light); text-decoration: underline; text-decoration-color: rgba(138,133,124,0.4);">OCPP 2.1</a></span>
       <span><a href="./ocpp-2.0.1/" style="color: var(--text-light); text-decoration: underline; text-decoration-color: rgba(138,133,124,0.4);">OCPP 2.0.1</a></span>
       <span><a href="./ocpp-1.6j/" style="color: var(--text-light); text-decoration: underline; text-decoration-color: rgba(138,133,124,0.4);">OCPP 1.6J</a></span>
     </div>
@@ -1111,6 +1190,8 @@ def process_file(source_rel: str, url_path: str):
 
     # Post-process
     body = wrap_tables(body)
+    if url_path == "ocpp-2.1/device-model":
+        body = card_matrix_entries(body)
     body = highlight_json_blocks(body)
     body = rewrite_md_links(body, source_rel, url_path)
 

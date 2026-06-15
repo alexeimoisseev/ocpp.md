@@ -42,7 +42,7 @@ Each catalog entry below will list:
 - [Smart Charging Deep-Dive](../OCPP-2.1-SmartCharging/OCPP-2.1-SmartCharging.md)
 - [Tariff And Cost Deep-Dive](../OCPP-2.1-TariffCost/OCPP-2.1-TariffCost.md)
 - [Data Types Reference](../OCPP-2.1-DataTypes.md)
-- [Enumerations Reference](../OCPP-2.1-Enumerations/)
+- [Enumerations Reference](../OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md)
 - [Device Model Reference](../OCPP-2.1-DeviceModel/OCPP-2.1-DeviceModel.md)
 
 ---

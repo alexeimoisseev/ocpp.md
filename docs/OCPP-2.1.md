@@ -11,14 +11,14 @@
 
 ## How This Document Was Produced
 
-This document is an overview and migration guide for OCPP 2.1. It mixes two confidence tiers. Mechanical facts — exact message names, which functional block a message belongs to, and message direction — are **schema-derived**: every message named here is cross-referenced to a `## <MessageName>` section in the mechanically generated schema docs under [OCPP-2.1-Schemas/](./OCPP-2.1-Schemas/), which were extracted directly from the official OCA OCPP 2.1 JSON schemas. The behavioral and migration narrative (what each capability area is for, how 2.1 differs from 2.0.1, backward-compatibility notes) is **spec-knowledge** — drawn from the OCPP 2.1 Edition 2 specification known via AI training data and the Part 1/2/4 source PDFs. Original wording is used throughout; the OCA specification is licensed CC BY-ND, so no spec prose is reproduced verbatim.
+This document is an overview and migration guide for OCPP 2.1. It mixes two confidence tiers. Mechanical facts — exact message names, which functional block a message belongs to, and message direction — are **schema-derived**: every message named here is cross-referenced to a `## <MessageName>` section in the mechanically generated schema docs linked per block from the [message catalogue](#4-message-catalogue-by-functional-block), which were extracted directly from the official OCA OCPP 2.1 JSON schemas. The behavioral and migration narrative (what each capability area is for, how 2.1 differs from 2.0.1, backward-compatibility notes) is **spec-knowledge** — drawn from the OCPP 2.1 Edition 2 specification known via AI training data and the Part 1/2/4 source PDFs. Original wording is used throughout; the OCA specification is licensed CC BY-ND, so no spec prose is reproduced verbatim.
 
 This document contains **1 escalation point** marked with `> **ESCALATE:**`. When an AI agent encounters one, it MUST stop and ask the developer to make the decision. See [METHODOLOGY.md](./METHODOLOGY.md) for the full confidence and escalation model.
 
 **Companion documents:**
 
 Mechanically generated (schema-derived, high confidence):
-- [Message Schemas](./OCPP-2.1-Schemas/) — field-level request/response schemas for all 91 messages, one file per functional block (linked individually in [§4](#4-message-catalogue-by-functional-block)).
+- [Message Schemas](#4-message-catalogue-by-functional-block) — field-level request/response schemas for all 91 messages, one file per functional block, linked individually from the message catalogue.
 - [Data Types Reference](./OCPP-2.1-DataTypes.md) — shared composite types used across blocks.
 - [Device Model Reference](./OCPP-2.1-DeviceModel/OCPP-2.1-DeviceModel.md) — components, variables, and the standardized device model.
 - [Enumerations Reference](./OCPP-2.1-Enumerations/OCPP-2.1-Enumerations.md) — all enumeration types and their allowed values.

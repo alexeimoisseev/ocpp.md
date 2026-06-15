@@ -144,7 +144,9 @@ If unclear, ask the developer which version they're using.
 
 ## OCPP 2.1 — 27 New Messages (added to 2.0.1's 64)
 
-OCPP 2.1 retains all 64 OCPP 2.0.1 messages and adds the following 27:
+OCPP 2.1 retains all 64 OCPP 2.0.1 messages and adds the following 27.
+Headings match the functional block each message's schema lives under (see the
+schema file map below).
 
 ### DER Control (Distributed Energy Resources)
 - `SetDERControl` (CSMS→CS) — Install DER control setpoint (frequency response, power limits, reactive power)
@@ -153,12 +155,10 @@ OCPP 2.1 retains all 64 OCPP 2.0.1 messages and adds the following 27:
 - `ReportDERControl` (CS→CSMS) — DER control query response
 - `NotifyDERAlarm` (CS→CSMS) — Report DER-related alarm condition
 - `NotifyDERStartStop` (CS→CSMS) — Notify DER function start/stop
-- `AFRRSignal` (CSMS→CS) — Automatic Frequency Restoration Reserve signal
 
 ### Bidirectional / V2X
 - `NotifyAllowedEnergyTransfer` (CSMS→CS) — Inform CS which energy transfer directions are allowed
-- `NotifyPriorityCharging` (CS→CSMS) — Notify that priority charging has started/stopped
-- `UsePriorityCharging` (CSMS→CS) — Request CS to use priority charging
+- `AFRRSignal` (CSMS→CS) — Automatic Frequency Restoration Reserve signal (frequency support for V2X)
 
 ### Battery Swap
 - `BatterySwap` (CS→CSMS) — Notify battery swap event at station
@@ -176,6 +176,8 @@ OCPP 2.1 retains all 64 OCPP 2.0.1 messages and adds the following 27:
 ### Dynamic Smart Charging
 - `PullDynamicScheduleUpdate` (CS→CSMS) — Request updated schedule for dynamic profile
 - `UpdateDynamicSchedule` (CSMS→CS) — Push schedule update for dynamic profile
+- `NotifyPriorityCharging` (CS→CSMS) — Notify that priority charging has started/stopped
+- `UsePriorityCharging` (CSMS→CS) — Request CS to use priority charging
 
 ### Periodic Event Stream
 - `OpenPeriodicEventStream` (CSMS→CS) — Open a stream for periodic event reporting

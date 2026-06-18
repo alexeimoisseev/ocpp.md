@@ -16,18 +16,25 @@ CSV_DIR = ROOT / "OCPP-2.1_appendices_csv"
 DM_OUT = ROOT / "docs" / "OCPP-2.1-DeviceModel" / "OCPP-2.1-DeviceModel.md"
 ENUM_OUT = ROOT / "docs" / "OCPP-2.1-Enumerations" / "OCPP-2.1-Enumerations.md"
 
+# (csv, title, note, canon) — `canon` is the formal schema type name the OCPP
+# JSON schemas use to reference this enum (OCA Part 2 Appendix 7,
+# "Standardized values for enumerations as string"). Only those four enums have
+# such a name; the rest are referenced by field name, so `canon` is None. The
+# canonical name is emitted in the heading so an agent that reads e.g.
+# "Values defined in Appendix as IdTokenEnumStringType" in a schema can grep
+# straight to the value table.
 ENUM_FILES = [
-    ("connectorenumtype.csv",         "Connector Types",             "Backs the free-form `connectorType` field."),
-    ("units_of_measure.csv",          "Units of Measure",            "Backs the `unit` field in MeterValues/measurands."),
-    ("security_events.csv",           "Security Events",             "Backs `SecurityEventNotification.type`."),
-    ("reason_codes.csv",              "Status Reason Codes",         "Standardized `StatusInfo.reasonCode` values."),
-    ("signingmethod.csv",             "Signing Methods",             "Backs `signingMethod` in signed meter values."),
-    ("charginglimitsourceenumtype.csv", "Charging Limit Sources",    "Backs `chargingLimitSource`."),
-    ("idtokenenumtype.csv",           "IdToken Types",               "Standardized `idToken.type` values."),
-    ("additional_info_types.csv",     "Additional Info Types",       "Backs `additionalInfo.type`."),
-    ("additional_info_types_adhoc.csv", "Additional Info Types (Ad-hoc)", "Ad-hoc payment additionalInfo types."),
-    ("paymentbrand.csv",              "Payment Brands",              "Standardized payment brand values."),
-    ("paymentrecognition.csv",        "Payment Recognition",         "Payment recognition method values."),
+    ("connectorenumtype.csv",         "Connector Types",             "Backs the free-form `connectorType` field.",       "ConnectorEnumStringType"),
+    ("units_of_measure.csv",          "Units of Measure",            "Backs the `unit` field in MeterValues/measurands.", None),
+    ("security_events.csv",           "Security Events",             "Backs `SecurityEventNotification.type`.",          None),
+    ("reason_codes.csv",              "Status Reason Codes",         "Standardized `StatusInfo.reasonCode` values.",     None),
+    ("signingmethod.csv",             "Signing Methods",             "Backs `signingMethod` in signed meter values.",    "SigningMethodEnumStringType"),
+    ("charginglimitsourceenumtype.csv", "Charging Limit Sources",    "Backs `chargingLimitSource`.",                     "ChargingLimitSourceEnumStringType"),
+    ("idtokenenumtype.csv",           "IdToken Types",               "Standardized `idToken.type` values.",              "IdTokenEnumStringType"),
+    ("additional_info_types.csv",     "Additional Info Types",       "Backs `additionalInfo.type`.",                     None),
+    ("additional_info_types_adhoc.csv", "Additional Info Types (Ad-hoc)", "Ad-hoc payment additionalInfo types.",        None),
+    ("paymentbrand.csv",              "Payment Brands",              "Standardized payment brand values.",               None),
+    ("paymentrecognition.csv",        "Payment Recognition",         "Payment recognition method values.",               None),
 ]
 
 
@@ -139,13 +146,17 @@ def generate_enums():
     lines = ["# OCPP 2.1 — Standardized Open Enumerations", "",
         "> **Source:** OCA OCPP 2.1 appendix CSVs. These are **open enumerations**: the JSON "
         "schemas type these fields as free-form strings and point here for the standardized "
-        "values. Mechanically generated — see [METHODOLOGY](../METHODOLOGY.md).", ""]
-    for fname, title, note in ENUM_FILES:
+        "values. Mechanically generated — see [METHODOLOGY](../METHODOLOGY.md).", "",
+        "> Headings carry the formal schema type name where OCA defines one (e.g. "
+        "`IdTokenEnumStringType`, OCA Part 2 Appendix 7) so a reference like \"Values defined "
+        "in Appendix as `IdTokenEnumStringType`\" in a JSON schema leads straight here.", ""]
+    for fname, title, note, canon in ENUM_FILES:
         if not (CSV_DIR / fname).exists():
             print(f"  WARN missing {fname}")
             continue
         h, r = read_csv(fname)
-        lines += [f"## {title} ({len(r)})", "", f"> {note}", "", md_table(h, r), ""]
+        heading = f"## {canon} — {title} ({len(r)})" if canon else f"## {title} ({len(r)})"
+        lines += [heading, "", f"> {note}", "", md_table(h, r), ""]
     ENUM_OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"Wrote {ENUM_OUT}")
 

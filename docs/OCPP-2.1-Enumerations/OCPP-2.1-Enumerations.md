@@ -2,7 +2,9 @@
 
 > **Source:** OCA OCPP 2.1 appendix CSVs. These are **open enumerations**: the JSON schemas type these fields as free-form strings and point here for the standardized values. Mechanically generated — see [METHODOLOGY](../METHODOLOGY.md).
 
-## Connector Types (33)
+> Headings carry the formal schema type name where OCA defines one (e.g. `IdTokenEnumStringType`, OCA Part 2 Appendix 7) so a reference like "Values defined in Appendix as `IdTokenEnumStringType`" in a JSON schema leads straight here.
+
+## ConnectorEnumStringType — Connector Types (33)
 
 > Backs the free-form `connectorType` field.
 
@@ -190,7 +192,7 @@
 |  | ValueTooLow | Provided value is too low. | (generic) |
 |  | ValueZeroNotAllowed | Provided value cannot be zero. | (generic) |
 
-## Signing Methods (7)
+## SigningMethodEnumStringType — Signing Methods (7)
 
 > Backs `signingMethod` in signed meter values.
 
@@ -204,7 +206,7 @@
 | ECDSA-secp384r1-SHA256 | ECDSA | secp384r1 | 384 bits | SHA-256 |
 | ECDSA-brainpool384r1-SHA256 | ECDSA | brainpool384r1 | 384 bits | SHA-256 |
 
-## Charging Limit Sources (4)
+## ChargingLimitSourceEnumStringType — Charging Limit Sources (4)
 
 > Backs `chargingLimitSource`.
 
@@ -215,7 +217,7 @@
 | SO | Indicates that a System Operator (DSO or TSO) has sent a charging limit. |
 | CSO | Indicates that the CSO has set this charging profile. |
 
-## IdToken Types (11)
+## IdTokenEnumStringType — IdToken Types (11)
 
 > Standardized `idToken.type` values.
 

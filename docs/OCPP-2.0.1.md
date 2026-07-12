@@ -33,6 +33,8 @@ This reference is part of a larger documentation set:
 - **[Smart Charging Deep-Dive](./OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging.md)** — Profile model, composite schedule calculation, AC/DC differences, grid integration, common pitfalls. Includes [Examples](./OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-Examples.md) and [ISO 15118 integration](./OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-ISO15118.md).
 - **[Message Sequences](./OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences.md)** — Boot sequence, authorization flows, transaction lifecycle. Includes [Operational Sequences](./OCPP-2.0.1-Sequences/OCPP-2.0.1-Sequences-Operational.md) (reservation, offline behavior, firmware, diagnostics).
 - **[Data Types Reference](./OCPP-2.0.1-DataTypes.md)** — All reusable composite types and enumerations, plus [field-level schemas](#detailed-schema-reference) for all 64 messages.
+- **[Device Model Reference](./OCPP-2.0.1-DeviceModel/OCPP-2.0.1-DeviceModel.md)** — The standardized component/variable catalog (73 components, 249 component/variable pairings) behind `GetVariables`/`SetVariables`/`GetReport`.
+- **[Enumerations Reference](./OCPP-2.0.1-Enumerations/OCPP-2.0.1-Enumerations.md)** — Standardized open-enumeration values: units of measure, security events, status reason codes.
 - **[Methodology](./METHODOLOGY.md)** — How these documents were produced, provenance tiers, and trust model.
 - **[AI Agent Setup](./AI-AGENT-SETUP.md)** — Full configuration guide for using this reference as a Claude Code plugin.
 
@@ -66,6 +68,8 @@ Charging Station
 - **Connector** is a physical socket/plug. An EVSE may have multiple connectors, but only one can be active at a time.
 
 **Important:** In OCPP 2.0.1, `evseId` and `connectorId` are 1-indexed integers. `evseId=0` refers to the Charging Station as a whole (used in certain messages like status notifications).
+
+Beyond the physical EVSE/connector hierarchy, OCPP 2.0.1 models configuration through a **Component / Variable** abstraction. A `Component` (optionally scoped to an EVSE) holds `Variable`s that are read with `GetVariables`/`GetReport` and written with `SetVariables`. The full standardized component/variable catalog is in the [Device Model Reference](./OCPP-2.0.1-DeviceModel/OCPP-2.0.1-DeviceModel.md).
 
 ### 2.3 Transport
 

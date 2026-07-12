@@ -41,6 +41,8 @@ The current specification, recommended for all new deployments. 64 messages orga
 
 - [OCPP 2.0.1 Overview & Architecture](./ocpp-2.0.1/) — Roles, device model, transport, message frame, all 64 messages
 - [Shared Data Types](./ocpp-2.0.1/data-types/) — 34 enums and composite types used across messages
+- [Device Model Reference](./ocpp-2.0.1/device-model/) — All 73 standardized components and 249 component/variable pairings behind `GetVariables`/`SetVariables`/`GetReport`
+- [Standardized Enumerations](./ocpp-2.0.1/enumerations/) — Units of measure, security events, status reason codes
 
 **Schemas (field-level, generated from OCA JSON schemas):**
 

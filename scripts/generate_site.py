@@ -51,6 +51,8 @@ CONTENT_FILES = [
     ("docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging.md", "ocpp-2.0.1/smart-charging"),
     ("docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-Examples.md", "ocpp-2.0.1/smart-charging/examples"),
     ("docs/OCPP-2.0.1-SmartCharging/OCPP-2.0.1-SmartCharging-ISO15118.md", "ocpp-2.0.1/smart-charging/iso15118"),
+    ("docs/OCPP-2.0.1-DeviceModel/OCPP-2.0.1-DeviceModel.md", "ocpp-2.0.1/device-model"),
+    ("docs/OCPP-2.0.1-Enumerations/OCPP-2.0.1-Enumerations.md", "ocpp-2.0.1/enumerations"),
     # OCPP 1.6J
     ("docs/OCPP-1.6J.md", "ocpp-1.6j"),
     ("docs/OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md", "ocpp-1.6j/schemas/core"),
@@ -1190,7 +1192,7 @@ def process_file(source_rel: str, url_path: str):
 
     # Post-process
     body = wrap_tables(body)
-    if url_path == "ocpp-2.1/device-model":
+    if url_path in ("ocpp-2.1/device-model", "ocpp-2.0.1/device-model"):
         body = card_matrix_entries(body)
     body = highlight_json_blocks(body)
     body = rewrite_md_links(body, source_rel, url_path)

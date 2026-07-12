@@ -11,9 +11,24 @@ This document explains how the OCPP reference files were produced, what guarante
 
 ## Source Material
 
-The sole input is the **official OCA JSON Schema files** for OCPP 2.0.1 FINAL — 128 files (64 request/response pairs) published by the Open Charge Alliance alongside the specification. These are the same schemas that vendors use for message validation in production OCPP implementations.
+Two separate extractors cover distinct parts of the OCPP 2.0.1 specification:
 
-**The schema files are not bundled with this repository.** To regenerate or verify the documentation, download the official OCPP 2.0.1 JSON schemas from the [Open Charge Alliance](https://openchargealliance.org) (free registration required) and place them in `OCPP-2.0.1_JSON_schemas/`.
+**Extractor 1 — JSON schema files (`scripts/extract_schemas.py`)**
+
+The input is the **official OCA JSON Schema files** for OCPP 2.0.1 FINAL — 128 files (64 request/response pairs) published by the Open Charge Alliance alongside the specification. These are the same schemas that vendors use for message validation in production OCPP implementations.
+
+**Extractor 2 — appendix CSVs (`scripts/extract_appendices_201.py`)**
+
+The input is the **official OCA appendix CSV exports** (Appendices v1.4) from the OCPP 2.0.1 specification — the Device Model component/variable catalog (`components.csv`, `dm_components_vars.csv`) and the open-enumeration tables (`units_of_measure.csv`, `security_events.csv`, `reason_codes.csv`). It produces:
+
+| Output | Content |
+|--------|---------|
+| `docs/OCPP-2.0.1-DeviceModel/OCPP-2.0.1-DeviceModel.md` | Full Device Model component/variable catalog (73 components, 249 component/variable pairings) |
+| `docs/OCPP-2.0.1-Enumerations/OCPP-2.0.1-Enumerations.md` | Open-enumeration reference (units of measure, security events, status reason codes) |
+
+Where the OCA CSV exports disagree with the appendices document itself (e.g. `VehicleID` vs `VehicleId` casing, `CustomizationCtrlr` missing from `components.csv`), the generated Device Model doc reproduces the CSV faithfully and flags the discrepancies in a clearly marked note.
+
+**The source files are not bundled with this repository.** To regenerate or verify the documentation, download the official OCPP 2.0.1 bundle from the [Open Charge Alliance](https://openchargealliance.org) (free registration required) and place the JSON schemas in `OCPP-2.0.1_JSON_schemas/` and the appendix CSVs in `OCPP-2.0.1_appendices_csv/`.
 
 ## Generation Process
 
@@ -91,15 +106,16 @@ Every message and every type includes an optional `customData` field for vendor 
 
 ## How to Regenerate
 
-1. Download the official OCPP 2.0.1 JSON schemas from [openchargealliance.org](https://openchargealliance.org) (free registration required).
-2. Place all `*Request.json` and `*Response.json` files in `OCPP-2.0.1_JSON_schemas/`.
+1. Download the official OCPP 2.0.1 bundle from [openchargealliance.org](https://openchargealliance.org) (free registration required).
+2. Place all `*Request.json` and `*Response.json` files in `OCPP-2.0.1_JSON_schemas/` and the appendix CSVs in `OCPP-2.0.1_appendices_csv/`.
 3. Run:
 
 ```
 python3 scripts/extract_schemas.py
+python3 scripts/extract_appendices_201.py
 ```
 
-This overwrites `OCPP-2.0.1-DataTypes.md` and all files in `OCPP-2.0.1-Schemas/`. The script is idempotent — running it twice on the same input produces identical output.
+`extract_schemas.py` overwrites `OCPP-2.0.1-DataTypes.md` and all files in `OCPP-2.0.1-Schemas/`; `extract_appendices_201.py` overwrites `OCPP-2.0.1-DeviceModel/OCPP-2.0.1-DeviceModel.md` and `OCPP-2.0.1-Enumerations/OCPP-2.0.1-Enumerations.md`. Both scripts are idempotent — running them twice on the same input produces identical output.
 
 ## Relationship to Official OCA Documents
 

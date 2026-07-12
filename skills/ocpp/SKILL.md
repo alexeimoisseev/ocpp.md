@@ -282,6 +282,8 @@ When you need detailed field-level schemas, sequence diagrams, or worked example
 | Topic | File to read |
 |-------|-------------|
 | **All shared data types (enums + composites)** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1-DataTypes.md` |
+| **Device model (components + variables catalog)** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1-DeviceModel/OCPP-2.0.1-DeviceModel.md` |
+| **Open enumerations (units, security events, reason codes)** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1-Enumerations/OCPP-2.0.1-Enumerations.md` |
 | **Authorization schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Authorization.md` |
 | **Availability schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Availability.md` |
 | **Diagnostics schemas** | `${CLAUDE_PLUGIN_ROOT}/docs/OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md` |
@@ -385,6 +387,8 @@ If invoked with `/ocpp <topic>`, immediately read the relevant files:
 - `/ocpp schemas` → read all Schema files
 - `/ocpp sequences` → read both Sequence files
 - `/ocpp types` or `/ocpp data-types` → read DataTypes
+- `/ocpp device-model` → read `OCPP-2.0.1-DeviceModel/OCPP-2.0.1-DeviceModel.md`
+- `/ocpp enums` or `/ocpp enumerations` → read `OCPP-2.0.1-Enumerations/OCPP-2.0.1-Enumerations.md`
 - `/ocpp firmware` → read Firmware schemas + Operational sequences
 - `/ocpp diagnostics` → read Diagnostics schemas + Operational sequences
 - `/ocpp reservation` → read Reservation schemas

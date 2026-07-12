@@ -94,59 +94,59 @@ OCPP 1.6 organizes its 28 messages into **6 Feature Profiles**. The Core profile
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `Authorize` | CP->CS | Validate an idTag before starting a transaction. |
-| `BootNotification` | CP->CS | Sent on boot. Contains vendor, model, serial, firmware version. CS responds with `Accepted`, `Pending`, or `Rejected` and a heartbeat interval. |
-| `ChangeAvailability` | CS->CP | Set a Connector (or entire CP) to Operative or Inoperative. |
-| `ChangeConfiguration` | CS->CP | Write a configuration key on the CP. |
-| `ClearCache` | CS->CP | Clear the authorization cache. |
-| `DataTransfer` | **Both** | Vendor-specific data exchange. Can be sent by either side. Uses `vendorId` and optional `messageId`. |
-| `GetConfiguration` | CS->CP | Read configuration key(s) from the CP. |
-| `Heartbeat` | CP->CS | Periodic keepalive. CS responds with current time for clock sync. |
-| `MeterValues` | CP->CS | Send meter data for a Connector (outside or during a transaction). |
-| `RemoteStartTransaction` | CS->CP | Remotely start a transaction on a Connector. |
-| `RemoteStopTransaction` | CS->CP | Remotely stop a transaction by transactionId. |
-| `Reset` | CS->CP | Restart the CP. Type: `Hard` or `Soft`. |
-| `StartTransaction` | CP->CS | Notify CS that a transaction has started. Includes connectorId, idTag, meterStart, timestamp. CS returns transactionId. |
-| `StatusNotification` | CP->CS | Report the status of a Connector (or CP as a whole). |
-| `StopTransaction` | CP->CS | Notify CS that a transaction has ended. Includes transactionId, meterStop, timestamp, reason, and optional transaction data (meter values). |
-| `UnlockConnector` | CS->CP | Remotely unlock a Connector. |
+| [`Authorize`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#authorize) | CP->CS | Validate an idTag before starting a transaction. |
+| [`BootNotification`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#bootnotification) | CP->CS | Sent on boot. Contains vendor, model, serial, firmware version. CS responds with `Accepted`, `Pending`, or `Rejected` and a heartbeat interval. |
+| [`ChangeAvailability`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#changeavailability) | CS->CP | Set a Connector (or entire CP) to Operative or Inoperative. |
+| [`ChangeConfiguration`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#changeconfiguration) | CS->CP | Write a configuration key on the CP. |
+| [`ClearCache`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#clearcache) | CS->CP | Clear the authorization cache. |
+| [`DataTransfer`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#datatransfer) | **Both** | Vendor-specific data exchange. Can be sent by either side. Uses `vendorId` and optional `messageId`. |
+| [`GetConfiguration`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#getconfiguration) | CS->CP | Read configuration key(s) from the CP. |
+| [`Heartbeat`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#heartbeat) | CP->CS | Periodic keepalive. CS responds with current time for clock sync. |
+| [`MeterValues`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#metervalues) | CP->CS | Send meter data for a Connector (outside or during a transaction). |
+| [`RemoteStartTransaction`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#remotestarttransaction) | CS->CP | Remotely start a transaction on a Connector. |
+| [`RemoteStopTransaction`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#remotestoptransaction) | CS->CP | Remotely stop a transaction by transactionId. |
+| [`Reset`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#reset) | CS->CP | Restart the CP. Type: `Hard` or `Soft`. |
+| [`StartTransaction`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#starttransaction) | CP->CS | Notify CS that a transaction has started. Includes connectorId, idTag, meterStart, timestamp. CS returns transactionId. |
+| [`StatusNotification`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#statusnotification) | CP->CS | Report the status of a Connector (or CP as a whole). |
+| [`StopTransaction`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#stoptransaction) | CP->CS | Notify CS that a transaction has ended. Includes transactionId, meterStop, timestamp, reason, and optional transaction data (meter values). |
+| [`UnlockConnector`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Core.md#unlockconnector) | CS->CP | Remotely unlock a Connector. |
 
 ### 4.2 Firmware Management (4 messages)
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `GetDiagnostics` | CS->CP | Request CP to upload diagnostics file to a given URL. |
-| `DiagnosticsStatusNotification` | CP->CS | Report diagnostics upload status (`Idle`, `Uploading`, `Uploaded`, `UploadFailed`). |
-| `UpdateFirmware` | CS->CP | Instruct CP to download and install firmware from a given URL. |
-| `FirmwareStatusNotification` | CP->CS | Report firmware update progress (`Downloaded`, `DownloadFailed`, `Downloading`, `Idle`, `InstallationFailed`, `Installing`, `Installed`). |
+| [`GetDiagnostics`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Firmware.md#getdiagnostics) | CS->CP | Request CP to upload diagnostics file to a given URL. |
+| [`DiagnosticsStatusNotification`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Firmware.md#diagnosticsstatusnotification) | CP->CS | Report diagnostics upload status (`Idle`, `Uploading`, `Uploaded`, `UploadFailed`). |
+| [`UpdateFirmware`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Firmware.md#updatefirmware) | CS->CP | Instruct CP to download and install firmware from a given URL. |
+| [`FirmwareStatusNotification`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Firmware.md#firmwarestatusnotification) | CP->CS | Report firmware update progress (`Downloaded`, `DownloadFailed`, `Downloading`, `Idle`, `InstallationFailed`, `Installing`, `Installed`). |
 
 ### 4.3 Local Auth List Management (2 messages)
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `SendLocalList` | CS->CP | Push a local authorization list (full or differential update). |
-| `GetLocalListVersion` | CS->CP | Query the current version number of the local auth list. |
+| [`SendLocalList`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-LocalAuthList.md#sendlocallist) | CS->CP | Push a local authorization list (full or differential update). |
+| [`GetLocalListVersion`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-LocalAuthList.md#getlocallistversion) | CS->CP | Query the current version number of the local auth list. |
 
 ### 4.4 Reservation (2 messages)
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `ReserveNow` | CS->CP | Reserve a Connector for a specific idTag until an expiry time. |
-| `CancelReservation` | CS->CP | Cancel an existing reservation by reservationId. |
+| [`ReserveNow`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Reservation.md#reservenow) | CS->CP | Reserve a Connector for a specific idTag until an expiry time. |
+| [`CancelReservation`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-Reservation.md#cancelreservation) | CS->CP | Cancel an existing reservation by reservationId. |
 
 ### 4.5 Smart Charging (3 messages)
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `SetChargingProfile` | CS->CP | Set a charging profile (schedule of power/current limits) on a Connector. |
-| `ClearChargingProfile` | CS->CP | Remove charging profiles by id, Connector, purpose, or stack level. |
-| `GetCompositeSchedule` | CS->CP | Request the effective combined charging schedule for a Connector. |
+| [`SetChargingProfile`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-SmartCharging.md#setchargingprofile) | CS->CP | Set a charging profile (schedule of power/current limits) on a Connector. |
+| [`ClearChargingProfile`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-SmartCharging.md#clearchargingprofile) | CS->CP | Remove charging profiles by id, Connector, purpose, or stack level. |
+| [`GetCompositeSchedule`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-SmartCharging.md#getcompositeschedule) | CS->CP | Request the effective combined charging schedule for a Connector. |
 
 ### 4.6 Remote Trigger (1 message)
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `TriggerMessage` | CS->CP | Ask CP to send a specific message (e.g., `BootNotification`, `StatusNotification`, `Heartbeat`, `MeterValues`, `DiagnosticsStatusNotification`, `FirmwareStatusNotification`). |
+| [`TriggerMessage`](./OCPP-1.6J-Schemas/OCPP-1.6J-Schemas-RemoteTrigger.md#triggermessage) | CS->CP | Ask CP to send a specific message (e.g., `BootNotification`, `StatusNotification`, `Heartbeat`, `MeterValues`, `DiagnosticsStatusNotification`, `FirmwareStatusNotification`). |
 
 ### 4.7 Common Patterns
 

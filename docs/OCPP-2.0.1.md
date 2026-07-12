@@ -135,22 +135,25 @@ OCPP uses a JSON-based RPC framework over WebSocket. There are three message typ
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `BootNotification` | CS→CSMS | Sent when CS boots up. Contains vendor, model, serial number, firmware version. CSMS responds with `Accepted`, `Pending`, or `Rejected` and a heartbeat interval. |
-| `Heartbeat` | CS→CSMS | Periodic keepalive. CSMS responds with current time for clock sync. |
-| `StatusNotification` | CS→CSMS | Reports the status of a Connector (Available, Occupied, Reserved, Unavailable, Faulted). |
-| `GetVariables` | CSMS→CS | Read configuration variables from the CS. |
-| `SetVariables` | CSMS→CS | Write configuration variables on the CS. |
-| `GetBaseReport` | CSMS→CS | Request a full or summary report of all variables. CS responds with `NotifyReport` messages. |
-| `NotifyReport` | CS→CSMS | Sends variable data in response to `GetBaseReport`. May be sent in multiple parts (seq/tbc). |
-| `Reset` | CSMS→CS | Restart the CS (Immediate or OnIdle). |
+| [`BootNotification`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#bootnotification) | CS→CSMS | Sent when CS boots up. Contains vendor, model, serial number, firmware version. CSMS responds with `Accepted`, `Pending`, or `Rejected` and a heartbeat interval. |
+| [`Heartbeat`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#heartbeat) | CS→CSMS | Periodic keepalive. CSMS responds with current time for clock sync. |
+| [`StatusNotification`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#statusnotification) | CS→CSMS | Reports the status of a Connector (Available, Occupied, Reserved, Unavailable, Faulted). |
+| [`GetVariables`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#getvariables) | CSMS→CS | Read configuration variables from the CS. |
+| [`SetVariables`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#setvariables) | CSMS→CS | Write configuration variables on the CS. |
+| [`GetBaseReport`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#getbasereport) | CSMS→CS | Request a full or summary report of all variables. CS responds with `NotifyReport` messages. |
+| [`GetReport`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#getreport) | CSMS→CS | Request a customized variable report filtered by component/variable or criteria. CS responds with `NotifyReport` messages. |
+| [`NotifyReport`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#notifyreport) | CS→CSMS | Sends variable data in response to `GetBaseReport`. May be sent in multiple parts (seq/tbc). |
+| [`SetNetworkProfile`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#setnetworkprofile) | CSMS→CS | Configure a network connection profile (CSMS URL, security profile, OCPP version) on the CS. |
+| [`Reset`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#reset) | CSMS→CS | Restart the CS (Immediate or OnIdle). |
 
 ### 4.2 Authorization
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `Authorize` | CS→CSMS | Validate an idToken (RFID, app, etc.) before starting a transaction. |
-| `SendLocalList` | CSMS→CS | Push a local authorization list to the CS for offline auth. |
-| `GetLocalListVersion` | CSMS→CS | Query current version of the local auth list. |
+| [`Authorize`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Authorization.md#authorize) | CS→CSMS | Validate an idToken (RFID, app, etc.) before starting a transaction. |
+| [`SendLocalList`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Authorization.md#sendlocallist) | CSMS→CS | Push a local authorization list to the CS for offline auth. |
+| [`GetLocalListVersion`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Authorization.md#getlocallistversion) | CSMS→CS | Query current version of the local auth list. |
+| [`ClearCache`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Authorization.md#clearcache) | CSMS→CS | Clear the CS's authorization cache. |
 
 **idToken types:** `Central`, `eMAID`, `ISO14443`, `ISO15693`, `KeyCode`, `Local`, `MacAddress`, `NoAuthorization`
 
@@ -162,9 +165,10 @@ OCPP 2.0.1 uses a simplified transaction model compared to 1.6.
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `TransactionEvent` | CS→CSMS | **The core transaction message.** Reports transaction lifecycle events. |
-| `RequestStartTransaction` | CSMS→CS | Remotely start a transaction. |
-| `RequestStopTransaction` | CSMS→CS | Remotely stop a transaction. |
+| [`TransactionEvent`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Transactions.md#transactionevent) | CS→CSMS | **The core transaction message.** Reports transaction lifecycle events. |
+| [`RequestStartTransaction`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Transactions.md#requeststarttransaction) | CSMS→CS | Remotely start a transaction. |
+| [`RequestStopTransaction`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Transactions.md#requeststoptransaction) | CSMS→CS | Remotely stop a transaction. |
+| [`GetTransactionStatus`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Transactions.md#gettransactionstatus) | CSMS→CS | Ask whether a transaction is ongoing and whether transaction messages are still queued for delivery. |
 
 #### TransactionEvent Details
 
@@ -188,7 +192,11 @@ OCPP 2.0.1 uses a simplified transaction model compared to 1.6.
 
 ### 4.4 Metering
 
-Meter values are embedded within `TransactionEvent` messages (not sent as separate `MeterValues` messages as in 1.6).
+Transaction meter values are embedded within `TransactionEvent` messages (not sent as separate `MeterValues` messages as in 1.6). The standalone `MeterValues` message still exists for meter data outside transactions.
+
+| Message | Direction | Purpose |
+|---------|-----------|---------|
+| [`MeterValues`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Transactions.md#metervalues) | CS→CSMS | Send meter values not related to a transaction (e.g., clock-aligned samples or in response to `TriggerMessage`). |
 
 A **MeterValue** contains a `timestamp` and an array of `sampledValue` entries, each with:
 
@@ -207,14 +215,15 @@ Smart charging allows the CSMS to control how much power/current a CS delivers.
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `SetChargingProfile` | CSMS→CS | Set a charging profile (schedule of limits). |
-| `GetChargingProfiles` | CSMS→CS | Retrieve active charging profiles. |
-| `ClearChargingProfile` | CSMS→CS | Remove charging profiles. |
-| `ClearedChargingLimit` | CS→CSMS | Notify that an external limit was cleared. |
-| `NotifyChargingLimit` | CS→CSMS | Report current charging limits (from external source or grid). |
-| `ReportChargingProfiles` | CS→CSMS | Response to `GetChargingProfiles`. |
-| `GetCompositeSchedule` | CSMS→CS | Get the combined/effective charging schedule. |
-| `NotifyEVChargingSchedule` | CS→CSMS | Report the EV's desired charging schedule (ISO 15118). |
+| [`SetChargingProfile`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md#setchargingprofile) | CSMS→CS | Set a charging profile (schedule of limits). |
+| [`GetChargingProfiles`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md#getchargingprofiles) | CSMS→CS | Retrieve active charging profiles. |
+| [`ClearChargingProfile`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md#clearchargingprofile) | CSMS→CS | Remove charging profiles. |
+| [`ClearedChargingLimit`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md#clearedcharginglimit) | CS→CSMS | Notify that an external limit was cleared. |
+| [`NotifyChargingLimit`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md#notifycharginglimit) | CS→CSMS | Report current charging limits (from external source or grid). |
+| [`ReportChargingProfiles`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md#reportchargingprofiles) | CS→CSMS | Response to `GetChargingProfiles`. |
+| [`GetCompositeSchedule`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md#getcompositeschedule) | CSMS→CS | Get the combined/effective charging schedule. |
+| [`NotifyEVChargingSchedule`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md#notifyevchargingschedule) | CS→CSMS | Report the EV's desired charging schedule (ISO 15118). |
+| [`NotifyEVChargingNeeds`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-SmartCharging.md#notifyevchargingneeds) | CS→CSMS | Report the EV's charging needs — energy amount, departure time (ISO 15118). |
 
 #### Charging Profile Structure
 
@@ -249,71 +258,72 @@ Profiles at the same purpose level use `stackLevel` to determine priority (highe
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `UpdateFirmware` | CSMS→CS | Instruct CS to download and install firmware. |
-| `FirmwareStatusNotification` | CS→CSMS | Report firmware update progress. |
-| `PublishFirmware` | CSMS→CS | Ask a CS to publish firmware for local distribution. |
-| `PublishFirmwareStatusNotification` | CS→CSMS | Report publish firmware status. |
-| `UnpublishFirmware` | CSMS→CS | Stop publishing firmware. |
+| [`UpdateFirmware`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Firmware.md#updatefirmware) | CSMS→CS | Instruct CS to download and install firmware. |
+| [`FirmwareStatusNotification`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Firmware.md#firmwarestatusnotification) | CS→CSMS | Report firmware update progress. |
+| [`PublishFirmware`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Firmware.md#publishfirmware) | CSMS→CS | Ask a CS to publish firmware for local distribution. |
+| [`PublishFirmwareStatusNotification`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Firmware.md#publishfirmwarestatusnotification) | CS→CSMS | Report publish firmware status. |
+| [`UnpublishFirmware`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Firmware.md#unpublishfirmware) | CSMS→CS | Stop publishing firmware. |
 
 ### 4.7 Diagnostics & Logging
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `GetLog` | CSMS→CS | Request diagnostic or security logs. |
-| `LogStatusNotification` | CS→CSMS | Report log upload status. |
-| `NotifyEvent` | CS→CSMS | Report events/alerts from monitored variables. |
-| `SetMonitoringBase` | CSMS→CS | Set monitoring level for all variables. |
-| `SetVariableMonitoring` | CSMS→CS | Configure monitoring on specific variables. |
-| `SetMonitoringLevel` | CSMS→CS | Set the severity threshold for reporting. |
-| `GetMonitoringReport` | CSMS→CS | Request a monitoring report. |
-| `ClearVariableMonitoring` | CSMS→CS | Remove variable monitors. |
-| `NotifyMonitoringReport` | CS→CSMS | Report monitoring configuration. |
-| `CustomerInformation` | CSMS→CS | Request or clear customer data (GDPR). |
-| `NotifyCustomerInformation` | CS→CSMS | Return customer data. |
+| [`GetLog`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#getlog) | CSMS→CS | Request diagnostic or security logs. |
+| [`LogStatusNotification`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#logstatusnotification) | CS→CSMS | Report log upload status. |
+| [`NotifyEvent`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#notifyevent) | CS→CSMS | Report events/alerts from monitored variables. |
+| [`SetMonitoringBase`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#setmonitoringbase) | CSMS→CS | Set monitoring level for all variables. |
+| [`SetVariableMonitoring`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#setvariablemonitoring) | CSMS→CS | Configure monitoring on specific variables. |
+| [`SetMonitoringLevel`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#setmonitoringlevel) | CSMS→CS | Set the severity threshold for reporting. |
+| [`GetMonitoringReport`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#getmonitoringreport) | CSMS→CS | Request a monitoring report. |
+| [`ClearVariableMonitoring`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#clearvariablemonitoring) | CSMS→CS | Remove variable monitors. |
+| [`NotifyMonitoringReport`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#notifymonitoringreport) | CS→CSMS | Report monitoring configuration. |
+| [`CustomerInformation`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#customerinformation) | CSMS→CS | Request or clear customer data (GDPR). |
+| [`NotifyCustomerInformation`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Diagnostics.md#notifycustomerinformation) | CS→CSMS | Return customer data. |
 
 ### 4.8 Reservation
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `ReserveNow` | CSMS→CS | Reserve an EVSE for a specific idToken. |
-| `CancelReservation` | CSMS→CS | Cancel a reservation. |
-| `ReservationStatusUpdate` | CS→CSMS | Notify reservation expired or removed. |
+| [`ReserveNow`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Reservation.md#reservenow) | CSMS→CS | Reserve an EVSE for a specific idToken. |
+| [`CancelReservation`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Reservation.md#cancelreservation) | CSMS→CS | Cancel a reservation. |
+| [`ReservationStatusUpdate`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Reservation.md#reservationstatusupdate) | CS→CSMS | Notify reservation expired or removed. |
 
 ### 4.9 Remote Triggers
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `TriggerMessage` | CSMS→CS | Ask CS to send a specific message (e.g., `BootNotification`, `StatusNotification`, `Heartbeat`, `MeterValues`, `FirmwareStatusNotification`). |
+| [`TriggerMessage`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Availability.md#triggermessage) | CSMS→CS | Ask CS to send a specific message (e.g., `BootNotification`, `StatusNotification`, `Heartbeat`, `MeterValues`, `FirmwareStatusNotification`). |
 
-### 4.10 Certificate Management
+### 4.10 Security & Certificate Management
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `Get15118EVCertificate` | CS→CSMS | Request an EV certificate (Plug & Charge). |
-| `GetCertificateStatus` | CS→CSMS | Check OCSP status of a certificate. |
-| `SignCertificate` | CS→CSMS | Request CSMS to sign a CSR. |
-| `CertificateSigned` | CSMS→CS | Return a signed certificate. |
-| `InstallCertificate` | CSMS→CS | Install a CA certificate. |
-| `DeleteCertificate` | CSMS→CS | Delete a certificate. |
-| `GetInstalledCertificateIds` | CSMS→CS | List installed certificates. |
+| [`SecurityEventNotification`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md#securityeventnotification) | CS→CSMS | Report a security event (e.g., invalid certificate, firmware verification failure). |
+| [`Get15118EVCertificate`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md#get15118evcertificate) | CS→CSMS | Request an EV certificate (Plug & Charge). |
+| [`GetCertificateStatus`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md#getcertificatestatus) | CS→CSMS | Check OCSP status of a certificate. |
+| [`SignCertificate`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md#signcertificate) | CS→CSMS | Request CSMS to sign a CSR. |
+| [`CertificateSigned`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md#certificatesigned) | CSMS→CS | Return a signed certificate. |
+| [`InstallCertificate`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md#installcertificate) | CSMS→CS | Install a CA certificate. |
+| [`DeleteCertificate`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md#deletecertificate) | CSMS→CS | Delete a certificate. |
+| [`GetInstalledCertificateIds`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Security.md#getinstalledcertificateids) | CSMS→CS | List installed certificates. |
 
 ### 4.11 Local Auth & Display
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `CostUpdated` | CSMS→CS | Push running/final cost to CS display. |
-| `SetDisplayMessage` | CSMS→CS | Set a message on the CS display. |
-| `GetDisplayMessages` | CSMS→CS | Retrieve display messages. |
-| `ClearDisplayMessage` | CSMS→CS | Remove a display message. |
-| `NotifyDisplayMessages` | CS→CSMS | Report configured display messages. |
-| `UnlockConnector` | CSMS→CS | Remotely unlock a connector (to free a cable). |
-| `ChangeAvailability` | CSMS→CS | Set an EVSE to operative or inoperative. |
+| [`CostUpdated`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Display.md#costupdated) | CSMS→CS | Push running/final cost to CS display. |
+| [`SetDisplayMessage`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Display.md#setdisplaymessage) | CSMS→CS | Set a message on the CS display. |
+| [`GetDisplayMessages`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Display.md#getdisplaymessages) | CSMS→CS | Retrieve display messages. |
+| [`ClearDisplayMessage`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Display.md#cleardisplaymessage) | CSMS→CS | Remove a display message. |
+| [`NotifyDisplayMessages`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Display.md#notifydisplaymessages) | CS→CSMS | Report configured display messages. |
+| [`UnlockConnector`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Availability.md#unlockconnector) | CSMS→CS | Remotely unlock a connector (to free a cable). |
+| [`ChangeAvailability`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Availability.md#changeavailability) | CSMS→CS | Set an EVSE to operative or inoperative. |
 
 ### 4.12 Data Transfer
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `DataTransfer` | **Both** | Vendor-specific or custom data exchange. Can be sent by either side. Uses `vendorId` and optional `messageId` to identify the payload. |
+| [`DataTransfer`](./OCPP-2.0.1-Schemas/OCPP-2.0.1-Schemas-Provisioning.md#datatransfer) | **Both** | Vendor-specific or custom data exchange. Can be sent by either side. Uses `vendorId` and optional `messageId` to identify the payload. |
 
 ---
 

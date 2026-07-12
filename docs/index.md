@@ -44,16 +44,16 @@ The current specification, recommended for all new deployments. 64 messages orga
 
 **Schemas (field-level, generated from OCA JSON schemas):**
 
-- [Provisioning](./ocpp-2.0.1/schemas/provisioning/) — BootNotification, GetVariables, SetVariables, Reset, etc.
-- [Authorization](./ocpp-2.0.1/schemas/authorization/) — Authorize, SendLocalList, ClearCache
-- [Transactions](./ocpp-2.0.1/schemas/transactions/) — TransactionEvent, RequestStartTransaction, MeterValues
-- [Smart Charging](./ocpp-2.0.1/schemas/smart-charging/) — SetChargingProfile, GetCompositeSchedule, etc.
-- [Firmware](./ocpp-2.0.1/schemas/firmware/) — UpdateFirmware, FirmwareStatusNotification
-- [Security](./ocpp-2.0.1/schemas/security/) — CertificateSigned, InstallCertificate, SecurityEventNotification
-- [Diagnostics](./ocpp-2.0.1/schemas/diagnostics/) — GetLog, NotifyEvent, SetVariableMonitoring
-- [Availability](./ocpp-2.0.1/schemas/availability/) — ChangeAvailability, StatusNotification, Heartbeat
-- [Reservation](./ocpp-2.0.1/schemas/reservation/) — ReserveNow, CancelReservation
-- [Display](./ocpp-2.0.1/schemas/display/) — SetDisplayMessage, CostUpdated
+- [Provisioning](./ocpp-2.0.1/schemas/provisioning/) — [BootNotification](./ocpp-2.0.1/schemas/provisioning/#bootnotification), [GetVariables](./ocpp-2.0.1/schemas/provisioning/#getvariables), [SetVariables](./ocpp-2.0.1/schemas/provisioning/#setvariables), [Reset](./ocpp-2.0.1/schemas/provisioning/#reset), etc.
+- [Authorization](./ocpp-2.0.1/schemas/authorization/) — [Authorize](./ocpp-2.0.1/schemas/authorization/#authorize), [SendLocalList](./ocpp-2.0.1/schemas/authorization/#sendlocallist), [ClearCache](./ocpp-2.0.1/schemas/authorization/#clearcache)
+- [Transactions](./ocpp-2.0.1/schemas/transactions/) — [TransactionEvent](./ocpp-2.0.1/schemas/transactions/#transactionevent), [RequestStartTransaction](./ocpp-2.0.1/schemas/transactions/#requeststarttransaction), [MeterValues](./ocpp-2.0.1/schemas/transactions/#metervalues)
+- [Smart Charging](./ocpp-2.0.1/schemas/smart-charging/) — [SetChargingProfile](./ocpp-2.0.1/schemas/smart-charging/#setchargingprofile), [GetCompositeSchedule](./ocpp-2.0.1/schemas/smart-charging/#getcompositeschedule), etc.
+- [Firmware](./ocpp-2.0.1/schemas/firmware/) — [UpdateFirmware](./ocpp-2.0.1/schemas/firmware/#updatefirmware), [FirmwareStatusNotification](./ocpp-2.0.1/schemas/firmware/#firmwarestatusnotification)
+- [Security](./ocpp-2.0.1/schemas/security/) — [CertificateSigned](./ocpp-2.0.1/schemas/security/#certificatesigned), [InstallCertificate](./ocpp-2.0.1/schemas/security/#installcertificate), [SecurityEventNotification](./ocpp-2.0.1/schemas/security/#securityeventnotification)
+- [Diagnostics](./ocpp-2.0.1/schemas/diagnostics/) — [GetLog](./ocpp-2.0.1/schemas/diagnostics/#getlog), [NotifyEvent](./ocpp-2.0.1/schemas/diagnostics/#notifyevent), [SetVariableMonitoring](./ocpp-2.0.1/schemas/diagnostics/#setvariablemonitoring)
+- [Availability](./ocpp-2.0.1/schemas/availability/) — [ChangeAvailability](./ocpp-2.0.1/schemas/availability/#changeavailability), [StatusNotification](./ocpp-2.0.1/schemas/provisioning/#statusnotification), [Heartbeat](./ocpp-2.0.1/schemas/provisioning/#heartbeat)
+- [Reservation](./ocpp-2.0.1/schemas/reservation/) — [ReserveNow](./ocpp-2.0.1/schemas/reservation/#reservenow), [CancelReservation](./ocpp-2.0.1/schemas/reservation/#cancelreservation)
+- [Display](./ocpp-2.0.1/schemas/display/) — [SetDisplayMessage](./ocpp-2.0.1/schemas/display/#setdisplaymessage), [CostUpdated](./ocpp-2.0.1/schemas/display/#costupdated)
 
 **Behavioral docs:**
 
@@ -79,25 +79,25 @@ The latest specification (Edition 2, 2025). A structural superset of 2.0.1 — a
 
 **Schemas (field-level, generated from OCA JSON schemas):**
 
-- [Security](./ocpp-2.1/schemas/security/) — SecurityEventNotification
-- [Provisioning](./ocpp-2.1/schemas/provisioning/) — BootNotification, GetVariables, SetVariables, Reset
-- [Authorization](./ocpp-2.1/schemas/authorization/) — Authorize, ClearCache
-- [Local Auth List](./ocpp-2.1/schemas/local-auth-list/) — SendLocalList, GetLocalListVersion
-- [Transactions](./ocpp-2.1/schemas/transactions/) — TransactionEvent, GetTransactionStatus
-- [Remote Control](./ocpp-2.1/schemas/remote-control/) — RequestStartTransaction, UnlockConnector, TriggerMessage
-- [Availability](./ocpp-2.1/schemas/availability/) — ChangeAvailability, StatusNotification
-- [Reservation](./ocpp-2.1/schemas/reservation/) — ReserveNow, CancelReservation
-- [Tariff & Cost](./ocpp-2.1/schemas/tariff-and-cost/) — GetTariffs, SetDefaultTariff, CostUpdated, NotifySettlement *(new in 2.1)*
-- [Meter Values](./ocpp-2.1/schemas/meter-values/) — MeterValues
-- [Smart Charging](./ocpp-2.1/schemas/smart-charging/) — SetChargingProfile, UpdateDynamicSchedule, UsePriorityCharging
-- [Firmware](./ocpp-2.1/schemas/firmware/) — UpdateFirmware, PublishFirmware
-- [Certificates](./ocpp-2.1/schemas/certificates/) — InstallCertificate, GetCertificateChainStatus
-- [Diagnostics](./ocpp-2.1/schemas/diagnostics/) — NotifyEvent, GetLog, periodic event streams
-- [Display](./ocpp-2.1/schemas/display/) — SetDisplayMessage
-- [Data Transfer](./ocpp-2.1/schemas/data-transfer/) — DataTransfer
-- [Bidirectional / V2X](./ocpp-2.1/schemas/bidirectional/) — NotifyAllowedEnergyTransfer, AFRRSignal *(new in 2.1)*
-- [DER Control](./ocpp-2.1/schemas/der-control/) — SetDERControl, ReportDERControl, NotifyDERAlarm *(new in 2.1)*
-- [Battery Swap](./ocpp-2.1/schemas/battery-swap/) — BatterySwap, RequestBatterySwap *(new in 2.1)*
+- [Security](./ocpp-2.1/schemas/security/) — [SecurityEventNotification](./ocpp-2.1/schemas/security/#securityeventnotification)
+- [Provisioning](./ocpp-2.1/schemas/provisioning/) — [BootNotification](./ocpp-2.1/schemas/provisioning/#bootnotification), [GetVariables](./ocpp-2.1/schemas/provisioning/#getvariables), [SetVariables](./ocpp-2.1/schemas/provisioning/#setvariables), [Reset](./ocpp-2.1/schemas/provisioning/#reset)
+- [Authorization](./ocpp-2.1/schemas/authorization/) — [Authorize](./ocpp-2.1/schemas/authorization/#authorize), [ClearCache](./ocpp-2.1/schemas/authorization/#clearcache)
+- [Local Auth List](./ocpp-2.1/schemas/local-auth-list/) — [SendLocalList](./ocpp-2.1/schemas/local-auth-list/#sendlocallist), [GetLocalListVersion](./ocpp-2.1/schemas/local-auth-list/#getlocallistversion)
+- [Transactions](./ocpp-2.1/schemas/transactions/) — [TransactionEvent](./ocpp-2.1/schemas/transactions/#transactionevent), [GetTransactionStatus](./ocpp-2.1/schemas/transactions/#gettransactionstatus)
+- [Remote Control](./ocpp-2.1/schemas/remote-control/) — [RequestStartTransaction](./ocpp-2.1/schemas/remote-control/#requeststarttransaction), [UnlockConnector](./ocpp-2.1/schemas/remote-control/#unlockconnector), [TriggerMessage](./ocpp-2.1/schemas/remote-control/#triggermessage)
+- [Availability](./ocpp-2.1/schemas/availability/) — [ChangeAvailability](./ocpp-2.1/schemas/availability/#changeavailability), [StatusNotification](./ocpp-2.1/schemas/availability/#statusnotification)
+- [Reservation](./ocpp-2.1/schemas/reservation/) — [ReserveNow](./ocpp-2.1/schemas/reservation/#reservenow), [CancelReservation](./ocpp-2.1/schemas/reservation/#cancelreservation)
+- [Tariff & Cost](./ocpp-2.1/schemas/tariff-and-cost/) — [GetTariffs](./ocpp-2.1/schemas/tariff-and-cost/#gettariffs), [SetDefaultTariff](./ocpp-2.1/schemas/tariff-and-cost/#setdefaulttariff), [CostUpdated](./ocpp-2.1/schemas/tariff-and-cost/#costupdated), [NotifySettlement](./ocpp-2.1/schemas/tariff-and-cost/#notifysettlement) *(new in 2.1)*
+- [Meter Values](./ocpp-2.1/schemas/meter-values/) — [MeterValues](./ocpp-2.1/schemas/meter-values/#metervalues)
+- [Smart Charging](./ocpp-2.1/schemas/smart-charging/) — [SetChargingProfile](./ocpp-2.1/schemas/smart-charging/#setchargingprofile), [UpdateDynamicSchedule](./ocpp-2.1/schemas/smart-charging/#updatedynamicschedule), [UsePriorityCharging](./ocpp-2.1/schemas/smart-charging/#useprioritycharging)
+- [Firmware](./ocpp-2.1/schemas/firmware/) — [UpdateFirmware](./ocpp-2.1/schemas/firmware/#updatefirmware), [PublishFirmware](./ocpp-2.1/schemas/firmware/#publishfirmware)
+- [Certificates](./ocpp-2.1/schemas/certificates/) — [InstallCertificate](./ocpp-2.1/schemas/certificates/#installcertificate), [GetCertificateChainStatus](./ocpp-2.1/schemas/certificates/#getcertificatechainstatus)
+- [Diagnostics](./ocpp-2.1/schemas/diagnostics/) — [NotifyEvent](./ocpp-2.1/schemas/diagnostics/#notifyevent), [GetLog](./ocpp-2.1/schemas/diagnostics/#getlog), periodic event streams
+- [Display](./ocpp-2.1/schemas/display/) — [SetDisplayMessage](./ocpp-2.1/schemas/display/#setdisplaymessage)
+- [Data Transfer](./ocpp-2.1/schemas/data-transfer/) — [DataTransfer](./ocpp-2.1/schemas/data-transfer/#datatransfer)
+- [Bidirectional / V2X](./ocpp-2.1/schemas/bidirectional/) — [NotifyAllowedEnergyTransfer](./ocpp-2.1/schemas/bidirectional/#notifyallowedenergytransfer), [AFRRSignal](./ocpp-2.1/schemas/bidirectional/#afrrsignal) *(new in 2.1)*
+- [DER Control](./ocpp-2.1/schemas/der-control/) — [SetDERControl](./ocpp-2.1/schemas/der-control/#setdercontrol), [ReportDERControl](./ocpp-2.1/schemas/der-control/#reportdercontrol), [NotifyDERAlarm](./ocpp-2.1/schemas/der-control/#notifyderalarm) *(new in 2.1)*
+- [Battery Swap](./ocpp-2.1/schemas/battery-swap/) — [BatterySwap](./ocpp-2.1/schemas/battery-swap/#batteryswap), [RequestBatterySwap](./ocpp-2.1/schemas/battery-swap/#requestbatteryswap) *(new in 2.1)*
 
 **Behavioral & feature docs:**
 
@@ -121,12 +121,12 @@ The most widely deployed version. 28 messages organized by Feature Profile. Uses
 
 **Schemas (field-level, generated from OCA JSON schemas):**
 
-- [Core](./ocpp-1.6j/schemas/core/) — BootNotification, Authorize, StartTransaction, StopTransaction, StatusNotification, etc. (16 messages)
-- [Smart Charging](./ocpp-1.6j/schemas/smart-charging/) — SetChargingProfile, ClearChargingProfile, GetCompositeSchedule
-- [Firmware](./ocpp-1.6j/schemas/firmware/) — UpdateFirmware, GetDiagnostics, status notifications
-- [Local Auth List](./ocpp-1.6j/schemas/local-auth-list/) — SendLocalList, GetLocalListVersion
-- [Reservation](./ocpp-1.6j/schemas/reservation/) — ReserveNow, CancelReservation
-- [Remote Trigger](./ocpp-1.6j/schemas/remote-trigger/) — TriggerMessage
+- [Core](./ocpp-1.6j/schemas/core/) — [BootNotification](./ocpp-1.6j/schemas/core/#bootnotification), [Authorize](./ocpp-1.6j/schemas/core/#authorize), [StartTransaction](./ocpp-1.6j/schemas/core/#starttransaction), [StopTransaction](./ocpp-1.6j/schemas/core/#stoptransaction), [StatusNotification](./ocpp-1.6j/schemas/core/#statusnotification), etc. (16 messages)
+- [Smart Charging](./ocpp-1.6j/schemas/smart-charging/) — [SetChargingProfile](./ocpp-1.6j/schemas/smart-charging/#setchargingprofile), [ClearChargingProfile](./ocpp-1.6j/schemas/smart-charging/#clearchargingprofile), [GetCompositeSchedule](./ocpp-1.6j/schemas/smart-charging/#getcompositeschedule)
+- [Firmware](./ocpp-1.6j/schemas/firmware/) — [UpdateFirmware](./ocpp-1.6j/schemas/firmware/#updatefirmware), [GetDiagnostics](./ocpp-1.6j/schemas/firmware/#getdiagnostics), status notifications
+- [Local Auth List](./ocpp-1.6j/schemas/local-auth-list/) — [SendLocalList](./ocpp-1.6j/schemas/local-auth-list/#sendlocallist), [GetLocalListVersion](./ocpp-1.6j/schemas/local-auth-list/#getlocallistversion)
+- [Reservation](./ocpp-1.6j/schemas/reservation/) — [ReserveNow](./ocpp-1.6j/schemas/reservation/#reservenow), [CancelReservation](./ocpp-1.6j/schemas/reservation/#cancelreservation)
+- [Remote Trigger](./ocpp-1.6j/schemas/remote-trigger/) — [TriggerMessage](./ocpp-1.6j/schemas/remote-trigger/#triggermessage)
 
 **Behavioral docs:**
 
